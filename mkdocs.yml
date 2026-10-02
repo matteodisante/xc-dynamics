@@ -1,0 +1,49 @@
+site_name: xc-dynamics
+site_description: Code for a master's thesis on cross-country soaring flights.
+site_url: https://matteodisante.github.io/xc-dynamics/
+repo_url: https://github.com/matteodisante/xc-dynamics
+repo_name: matteodisante/xc-dynamics
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle: {icon: material/weather-night, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle: {icon: material/weather-sunny, name: Light mode}
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            heading_level: 2
+            show_root_heading: true
+            show_source: false
+            show_signature_annotations: true
+            members_order: source
+            filters: ["!^_", "!^[A-Z_]+$"]  # functions only: no private names, no constants
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Downloading the data: guides/download.md
+  - Reference:
+      - download: reference/download.md
