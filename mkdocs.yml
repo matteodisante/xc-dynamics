@@ -47,3 +47,4 @@ nav:
       - Downloading the data: guides/download.md
   - Reference:
       - download: reference/download.md
+      - preprocessing: reference/preprocessing.md

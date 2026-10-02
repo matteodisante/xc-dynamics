@@ -1,0 +1,7 @@
+# Thresholds of the pre-processing (thesis, chapter 2, "Trajectory pre-processing").
+
+altitude:  # step (i)
+  gnss_present_min: 0.95  # share of fixes with a GNSS altitude
+  gnss_min_range_m: 30.0  # a flatter channel is stuck, or the flight barely moved
+  baro_witness_present_min: 0.95
+  baro_witness_min_range_m: 30.0
