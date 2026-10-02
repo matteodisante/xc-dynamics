@@ -1,0 +1,11 @@
+# Settings for scripts/download_ffvl.py. Edit them for your machine.
+
+workers: 4  # parallel downloads: keep it low, out of courtesy to the FFVL server
+
+para:
+  root: /Volumes/SSD_DISANTE/paragliders/ffvl_cfd_igc
+  seasons: 1999-2025  # a season is named by its start year: 2025 = 2025-2026
+
+delta:
+  root: /Volumes/SSD_DISANTE/hang_gliders/delta_cfd_igc
+  seasons: 2001-2025

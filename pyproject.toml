@@ -1,0 +1,19 @@
+[project]
+name = "xc-dynamics"
+version = "0.1.0"
+description = "Analysis of cross-country soaring flights."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "curl-cffi>=0.15",
+    "pandas>=2.2",
+    "pyyaml>=6.0.3",
+    "tqdm>=4.66",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
