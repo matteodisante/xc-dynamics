@@ -1,4 +1,4 @@
-# Thresholds of the pre-processing (thesis, chapter 2, "Trajectory pre-processing").
+# Thresholds of the pre-processing (thesis, chapter 3, "Trajectory pre-processing").
 
 altitude:  # step (i)
   gnss_present_min: 0.95  # share of fixes with a GNSS altitude

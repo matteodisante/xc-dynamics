@@ -1,0 +1,65 @@
+% Typography and packages of the thesis.
+\documentclass[11pt,a4paper,twoside]{report}
+
+% Omit volatile PDF metadata, so the same sources give the same PDF.
+\ifdefined\pdfinfoomitdate\pdfinfoomitdate=1\fi
+\ifdefined\pdftrailerid\pdftrailerid{}\fi
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage[a4paper,margin=2.7cm]{geometry}
+\usepackage{microtype}
+\usepackage{graphicx}
+% singlelinecheck=false: the one-line test of long captions overflows TeX's dimensions.
+\usepackage[singlelinecheck=false]{caption}
+\captionsetup{font=small, labelfont=bf, labelsep=period}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{csquotes}
+\usepackage{hyperref}
+\usepackage{cite}
+
+% Running headers: chapter on the left page, section on the right, page number outside.
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\makeatletter
+\renewcommand{\chaptermark}[1]{\markboth{\@chapapp\ \thechapter.\ #1}{}}
+\makeatother
+\renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\itshape\nouppercase{\leftmark}}
+\fancyhead[RO]{\itshape\nouppercase{\rightmark}}
+\fancyfoot[LE,RO]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[LE,RO]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+\sisetup{group-separator={,}, group-minimum-digits=4}
+
+% Colours shared with the figures.
+\definecolor{figblue}{HTML}{3477A8}
+\definecolor{figred}{HTML}{B5482A}
+\definecolor{figgreen}{HTML}{4E8A5B}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=figblue,
+  citecolor=figgreen,
+  urlcolor=figblue,
+  linktoc=all,
+  bookmarksnumbered=true,
+  pdftitle={Anomalous Transport in Soaring Flights},
+  pdfauthor={Matteo Di Sante},
+}

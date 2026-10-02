@@ -1,0 +1,60 @@
+% Master's thesis (work in progress). Build from this folder:
+%   latexmk -pdf main.tex
+\input{preamble}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+
+\begin{titlepage}
+\centering
+{\scshape\large Università di Pisa \\ Department of Physics\par}
+{\scshape Master's Degree in Physics\par}
+\vfill
+{\Huge\bfseries Anomalous Transport in Soaring Flights\par}
+\vspace{0.8em}
+{\LARGE Collective Strategies and Intermittent Search Models\par}
+\vfill
+\begin{minipage}[t]{0.45\textwidth}
+  \raggedright\large
+  \textit{Candidate}\\
+  Matteo Di Sante\par
+\end{minipage}\hfill
+\begin{minipage}[t]{0.45\textwidth}
+  \raggedleft\large
+  \textit{Supervisors}\\
+  Prof.\ Michael Benzaquen\\
+  Dr Alexandre Darmon\\[0.6em]
+  \textit{Internal tutor (Pisa)}\\
+  Prof.\ Riccardo Mannella\par
+\end{minipage}
+\vfill
+{\large Academic year 2025--2026\par}
+\vspace{1em}
+{\small Working draft, last modified \today.\\
+Sources and code: \url{https://github.com/matteodisante/xc-dynamics}\par}
+\end{titlepage}
+
+% Front matter in roman numerals; the body restarts at 1 with the first chapter.
+\pagenumbering{roman}
+\hypersetup{pageanchor=true}
+
+\begingroup
+\small
+\tableofcontents
+\endgroup
+
+\clearpage
+\pagenumbering{arabic}
+
+\begingroup
+\raggedbottom
+\setlength{\parskip}{4pt plus 1pt minus 1pt}
+\input{chapters/01-introduction}
+\input{chapters/02-dataset}
+\input{chapters/03-preprocessing}
+\endgroup
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}

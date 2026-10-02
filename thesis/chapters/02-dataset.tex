@@ -1,0 +1,50 @@
+\chapter{The dataset}
+\label{ch:dataset}
+
+\section{Source}
+\label{sec:source}
+
+The flights come from the \emph{Coupe F\'ed\'erale de Distance} (CFD), the
+cross-country competition of the French free-flight federation (FFVL). Pilots declare
+their flights online, and each entry carries the flight's metadata and, in most
+cases, its GPS track. Paragliders and hang gliders have separate archives; a larger
+share of hang-glider entries has no track.
+
+A season runs from 1~September to 31~August. We use the paraglider seasons from
+1999--2000 and the hang-glider seasons from 2001--2002, up to 2025--2026. For each
+season we download the list of declared flights, kept verbatim as provenance, and
+every track it links. A saved list is never replaced, so each one is a snapshot of
+the day it was downloaded: the 2025--2026 lists were saved around the end of June
+2026 and miss the rest of that season.
+
+\section{Tracks and metadata}
+\label{sec:tracks}
+
+Tracks are IGC files~\cite{fai_igc_spec}, plain-text records of the flight. Each
+\texttt{B} record is one \emph{fix}: UTC time, latitude and longitude, a validity flag,
+and two altitudes, the pressure altitude from the barometer and the GNSS altitude from
+the satellite fix. The sampling interval depends on the recorder and need not be
+constant within a flight. Some recorders log no pressure altitude.
+
+The metadata give the date, the pilot, the take-off and landing sites, the wing
+model and class, the scored distance and the scoring category of the declared route
+(free distance, out-and-return, flat or FAI triangle and a few others). The category
+describes the declared route only. A few paraglider entries have an incomplete date,
+such as \texttt{0000-00-00}, which excludes them from any comparison by date.
+
+\section{Glider categories}
+\label{sec:glider}
+
+Wing design changes speed, glide performance and turning geometry, so paragliders and
+hang gliders are analysed separately~\cite{vilpellet2026}. A paraglider is a flexible
+canopy; a hang glider has a framed wing, flexible or rigid.
+
+The wing class follows a different system in each discipline. Paraglider classes are
+those of the EN~926-2 standard, A to D, written with their equivalent in the older LTF
+scale (\enquote{C ou 2} reads \enquote{C or 2}), plus the CIVL Competition Class and a
+few other labels, such as tandem or uncertified wings. EN classes rank passive
+safety and the skill needed to recover from a collapse, and say nothing direct about speed or glide
+ratio~\cite{fpren926_2_2012}. Hang-glider classes are those of the
+FAI~\cite{fai_sc7_2024}: Class~1, with its Sport sub-class, for wings controlled
+by weight shift alone, and Classes~2 and~5 for rigid wings with movable control
+surfaces.

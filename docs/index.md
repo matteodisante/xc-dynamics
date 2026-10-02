@@ -20,6 +20,7 @@ src/xc_dynamics/    the code, one subpackage per function
 configs/            settings that depend on the machine
 tests/              same structure as src/
 docs/               this documentation
+thesis/             the thesis, in LaTeX
 ```
 
 The guides explain how to run each task; the reference describes every function,

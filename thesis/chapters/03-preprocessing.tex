@@ -1,0 +1,51 @@
+\chapter{Trajectory pre-processing}
+\label{ch:preproc}
+
+The pre-processing turns each IGC file into a trajectory fit for analysis. This
+chapter covers its first two stages: reading the fixes and choosing the altitude
+channel.
+
+\section{Reading the fixes}
+\label{sec:parsing}
+
+Each \texttt{B} record gives a fix $(t_i,\varphi_i,\lambda_i)$, with latitude and
+longitude in degrees, together with the validity flag and the two altitudes
+$h_i^{\mathrm{baro}}$ and $h_i^{\mathrm{GNSS}}$. A record that does not follow the
+fixed layout of the format, or whose time of day or position is impossible, is
+discarded. A missing or unreadable altitude,
+including the zero the format uses for a missing reading, is marked as missing, and
+the fix keeps its time and position.
+
+Time is measured in seconds from the first fix. Records carry only the time of day,
+so a flight crossing UTC midnight would jump back by a day; a day is added when the
+clock passes from the last hour of one day to the first hour of the next. Other
+backward steps and repeated times are left in place, as are well-formed but implausible fixes such as position
+spikes: the parser discards only what cannot be read. The validity flag, which marks
+fixes without a three-dimensional GNSS solution, is kept but not used at this stage.
+
+\section{Choice of altitude channel}
+\label{sec:altchannel}
+
+Some recorders log no pressure altitude, so we use GNSS altitude for every flight,
+$z=h^{\mathrm{GNSS}}$. Its vertical datum is not uniform across recorders: the IGC
+specification prescribes height above the WGS84 ellipsoid~\cite{fai_igc_spec}, the
+CIVL specification for hang gliders and paragliders height above the
+geoid~\cite{fai_civl_s7h_2024}. A constant offset cancels in altitude increments, but
+comparing absolute altitudes across flights would need a datum audit.
+
+Let $N$ be the number of fixes of a flight and $P$ the set of those with a GNSS
+altitude. The flight is kept only if
+\begin{equation}
+  \frac{|P|}{N}\geq0.95
+  \qquad\text{and}\qquad
+  \max_{i\in P}h_i^{\mathrm{GNSS}}-\min_{i\in P}h_i^{\mathrm{GNSS}}\geq\SI{30}{\metre}.
+  \label{eq:gnss-admission}
+\end{equation}
+The first condition rejects incomplete channels; the second rejects channels stuck at
+one value, and flights with almost no vertical excursion. Fixes flagged as lacking a
+three-dimensional solution count as present if they carry an altitude. Pressure
+altitude is never substituted for a missing GNSS value.
+
+The barometer is checked with the same two conditions and thresholds. A flight whose
+barometer passes is marked, so that later cleaning steps can use pressure altitude as
+independent evidence; the mark does not decide whether the flight is kept.
