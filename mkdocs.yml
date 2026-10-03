@@ -39,12 +39,18 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:  # ```mermaid blocks become diagrams
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
   - Home: index.md
+  - Architecture: architecture.md
   - Guides:
       - Downloading the data: guides/download.md
+      - Building the thesis: guides/thesis.md
   - Reference:
       - download: reference/download.md
       - preprocessing: reference/preprocessing.md
