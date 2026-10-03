@@ -11,11 +11,25 @@ cases, its GPS track. Paragliders and hang gliders have separate archives; a lar
 share of hang-glider entries has no track.
 
 A season runs from 1~September to 31~August. We use the paraglider seasons from
-1999--2000 and the hang-glider seasons from 2001--2002, up to 2025--2026. For each
+\ParaSeasonFirst\ and the hang-glider seasons from \HangSeasonFirst, up to \ParaSeasonLast. For each
 season we download the list of declared flights, kept verbatim as provenance, and
 every track it links. A saved list is never replaced, so each one is a snapshot of
 the day it was downloaded: the 2025--2026 lists were saved around the end of June
 2026 and miss the rest of that season.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Paraglider flights per season.}
+\label{tab:seasons-para}
+\input{generated/02-dataset-seasons-para}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\caption{Hang-glider flights per season.}
+\label{tab:seasons-hang}
+\input{generated/02-dataset-seasons-hang}
+\end{table}
 
 \section{Tracks and metadata}
 \label{sec:tracks}

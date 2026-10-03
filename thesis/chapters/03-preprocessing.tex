@@ -36,9 +36,9 @@ comparing absolute altitudes across flights would need a datum audit.
 Let $N$ be the number of fixes of a flight and $P$ the set of those with a GNSS
 altitude. The flight is kept only if
 \begin{equation}
-  \frac{|P|}{N}\geq0.95
+  \frac{|P|}{N}\geq\cfgAltitudeGnssPresentMin
   \qquad\text{and}\qquad
-  \max_{i\in P}h_i^{\mathrm{GNSS}}-\min_{i\in P}h_i^{\mathrm{GNSS}}\geq\SI{30}{\metre}.
+  \max_{i\in P}h_i^{\mathrm{GNSS}}-\min_{i\in P}h_i^{\mathrm{GNSS}}\geq\SI{\cfgAltitudeGnssMinRangeM}{\metre}.
   \label{eq:gnss-admission}
 \end{equation}
 The first condition rejects incomplete channels; the second rejects channels stuck at
