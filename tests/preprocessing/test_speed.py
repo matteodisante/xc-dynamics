@@ -38,17 +38,25 @@ def test_speed_summary_without_steps():
     assert np.isnan(summary["median_kmh"]) and np.isnan(summary["p90_kmh"])
 
 
-def test_few_fast_steps_keep_the_flight():
-    result = track_speed(northward([36] * 18 + [360] * 2), max_kmh=108, fast_share_max=0.10)
-    assert result["fast_share"] == approx(0.10)
+def test_slow_flight_with_a_few_spikes_is_kept():
+    # Two steps at 360 km/h do not move the median of a flight at 36 km/h.
+    result = track_speed(northward([36] * 18 + [360] * 2), median_max_kmh=110)
+    assert result["median_kmh"] == approx(36)
     assert result["speed_ok"]
 
 
-def test_mostly_fast_track_is_dropped():
-    result = track_speed(northward([36] * 17 + [360] * 3), max_kmh=108, fast_share_max=0.10)
-    assert result["fast_share"] == approx(0.15)
+def test_flight_always_fast_is_dropped():
+    result = track_speed(northward([150] * 20), median_max_kmh=110)
+    assert result["median_kmh"] == approx(150)
     assert not result["speed_ok"]
 
 
-def test_no_steps_keep_the_flight():
-    assert track_speed(northward([]), max_kmh=108, fast_share_max=0.10) == {"fast_share": 0.0, "speed_ok": True}
+def test_threshold_falls_between_just_below_and_just_above():
+    # Not exactly 110: the speed recomputed from degrees carries a tiny rounding error.
+    assert track_speed(northward([109.9] * 20), median_max_kmh=110)["speed_ok"]
+    assert not track_speed(northward([110.1] * 20), median_max_kmh=110)["speed_ok"]
+
+
+def test_flight_without_steps_is_kept():
+    result = track_speed(northward([]), median_max_kmh=110)
+    assert np.isnan(result["median_kmh"]) and result["speed_ok"]

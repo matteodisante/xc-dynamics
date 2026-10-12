@@ -13,4 +13,3 @@ speed:  # horizontal speed between consecutive fixes
   median_max_kmh:  # a flight with a faster median step speed is not a free flight
     para: 70.0
     hang: 110.0
-  fast_share_max: 0.10  # a flight with a larger share of faster steps is not a free flight

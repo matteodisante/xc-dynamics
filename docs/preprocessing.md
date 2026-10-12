@@ -45,7 +45,7 @@ the tests in `tests/preprocessing/`, the thresholds in `configs/preprocessing.ya
 | 2 | Choice of altitude channel | [`altitude_channel`][xc_dynamics.preprocessing.altitude.altitude_channel] | `altitude.*` | a verdict on the flight |
 | 3 | Clock | [`increasing_time`][xc_dynamics.preprocessing.clean.increasing_time] | none | a mask of the fixes to keep |
 | 4 | Repeated positions | [`moving_position`][xc_dynamics.preprocessing.clean.moving_position] | none | a mask of the fixes to keep |
-| 5 | Fast tracks | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on the speeds of [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.*` | a verdict on the flight |
+| 5 | Fast tracks | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on the speeds of [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.median_max_kmh` | a verdict on the flight |
 
 ## Two kinds of step
 
@@ -63,9 +63,17 @@ strictly increasing.
 
 Every threshold is a key of `configs/preprocessing.yaml`; a function receives it as an
 argument and never reads the file. The thesis quotes the same keys as macros (see
-[Building the thesis](guides/thesis.md)). The top speed `speed.max_kmh` is set per
-discipline, `para` and `hang`, and the horizontal excursion rule will use the same two
-values.
+[Building the thesis](guides/thesis.md)).
+
+The two speed thresholds are set per discipline, `para` and `hang`, and judge different
+things:
+
+- `speed.median_max_kmh` (step 5) judges a whole flight by the median speed of its steps.
+  It was read off the histograms of the median speed of every flight, drawn by
+  `thesis/scripts/preprocessing.py` from the output of
+  `scripts/preprocessing/flight_speeds.py`.
+- `speed.max_kmh` judges a single step: a faster one is a recorder error. The horizontal
+  excursion rule, not written yet, will use it.
 
 ## Adding a step
 

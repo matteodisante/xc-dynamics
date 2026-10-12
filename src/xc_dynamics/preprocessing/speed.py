@@ -1,9 +1,10 @@
 """Horizontal speed between consecutive fixes, and the rule on tracks that are too fast.
 
-A free flight has only a few steps faster than the top speed of its discipline, and
-the excursion rule deletes them one by one. A track that is too fast most of the time
-is not a free flight (a powered aircraft, a file with compressed time),
-so the whole flight is dropped.
+A free flight spends much of its time climbing in thermals at a low ground speed, so
+the median speed of its steps stays well below the top speed of the wing. A track with
+a faster median is not a free flight (a powered aircraft, a file with compressed time),
+so the whole flight is dropped. Single steps that are too fast are a different problem,
+left to the excursion rule.
 """
 
 import numpy as np
@@ -45,9 +46,9 @@ def speed_summary(fixes: pd.DataFrame) -> dict:
     }
 
 
-def track_speed(fixes: pd.DataFrame, max_kmh: float, fast_share_max: float) -> dict:
-    """Share of steps faster than the top speed (0 with fewer than two fixes), and
-    whether the flight is kept (speed_ok)."""
-    fast = step_speed(fixes) > max_kmh
-    fast_share = float(fast.mean()) if len(fast) else 0.0
-    return {"fast_share": fast_share, "speed_ok": fast_share <= fast_share_max}
+def track_speed(fixes: pd.DataFrame, median_max_kmh: float) -> dict:
+    """Median step speed in km/h (NaN without steps), and whether the flight is kept
+    (speed_ok): if its median is at most median_max_kmh, or if it has no steps."""
+    # The same median the threshold was chosen on, in scripts/preprocessing/flight_speeds.py.
+    median = speed_summary(fixes)["median_kmh"]
+    return {"median_kmh": median, "speed_ok": bool(np.isnan(median) or median <= median_max_kmh)}
