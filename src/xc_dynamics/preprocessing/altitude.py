@@ -1,4 +1,4 @@
-"""Step (i) of the pre-processing: the altitude channel.
+"""The altitude channel of the pre-processing.
 
 The analysis uses the GNSS altitude. A flight is kept only if that channel has a
 value at most fixes and actually moves. The pressure altitude is never used in its
