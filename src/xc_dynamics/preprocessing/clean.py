@@ -21,3 +21,18 @@ def increasing_time(fixes: pd.DataFrame) -> np.ndarray:
     keep = np.ones(len(t), dtype=bool)  # the first fix has nothing before it
     keep[1:] = t[1:] > latest_before
     return keep
+
+
+def moving_position(fixes: pd.DataFrame) -> np.ndarray:
+    """The repeated-position rule: delete a fix whose latitude and longitude equal those of the fix before it.
+
+    The recorder repeats its last position while the clock runs, so the fix is not a
+    new measurement. In a run of identical positions only the first fix is kept.
+    """
+    lat, lon = fixes["lat"].to_numpy(), fixes["lon"].to_numpy()
+    # Entry j: fix j+1 has the same latitude and longitude as fix j (exact, same IGC digits).
+    same_as_before = (lat[1:] == lat[:-1]) & (lon[1:] == lon[:-1])
+    keep = np.ones(len(lat), dtype=bool)  # the first fix has nothing before it
+    # Keep each fix only if its position differs from the previous one.
+    keep[1:] = ~same_as_before
+    return keep

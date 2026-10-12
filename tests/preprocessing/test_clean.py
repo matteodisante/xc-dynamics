@@ -1,6 +1,6 @@
 import pandas as pd
 
-from xc_dynamics.preprocessing.clean import increasing_time
+from xc_dynamics.preprocessing.clean import increasing_time, moving_position
 
 
 def kept_times(t):
@@ -29,3 +29,28 @@ def test_forward_glitch_drops_the_good_fixes_behind_it():
 def test_no_fixes_and_one_fix():
     assert kept_times([]) == []
     assert kept_times([7]) == [7]
+
+
+def moving_mask(lat, lon):
+    return moving_position(pd.DataFrame({"lat": lat, "lon": lon})).tolist()
+
+
+def test_distinct_positions_are_untouched():
+    assert moving_mask([45.0, 45.1, 45.2], [6.0, 6.0, 6.0]) == [True, True, True]
+
+
+def test_run_of_identical_positions_keeps_the_first_fix():
+    assert moving_mask([45.0, 45.0, 45.0, 45.1], [6.0, 6.0, 6.0, 6.0]) == [True, False, False, True]
+
+
+def test_one_coordinate_changing_is_enough_to_keep_the_fix():
+    assert moving_mask([45.0, 45.0, 45.1], [6.0, 6.1, 6.1]) == [True, True, True]
+
+
+def test_returning_to_an_earlier_position_is_kept():
+    assert moving_mask([45.0, 45.1, 45.0], [6.0, 6.0, 6.0]) == [True, True, True]
+
+
+def test_no_fixes_and_one_fix_for_positions():
+    assert moving_mask([], []) == []
+    assert moving_mask([45.0], [6.0]) == [True]
