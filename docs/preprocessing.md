@@ -63,7 +63,7 @@ strictly increasing.
 
 Every threshold is a key of `configs/preprocessing.yaml`; a function receives it as an
 argument and never reads the file. The thesis quotes the same keys as macros (see
-[Building the thesis](guides/thesis.md)). The top speed `speed.max_m_s` is set per
+[Building the thesis](guides/thesis.md)). The top speed `speed.max_kmh` is set per
 discipline, `para` and `delta`, and the horizontal excursion rule will use the same two
 values.
 
