@@ -5,3 +5,9 @@ altitude:
   gnss_min_range_m: 30.0  # a flatter channel is stuck, or the flight barely moved
   baro_witness_present_min: 0.95
   baro_witness_min_range_m: 30.0
+
+speed:  # horizontal speed between consecutive fixes
+  max_m_s:  # top speed of the discipline: a faster step is a recorder error
+    para: 30.0
+    delta: 55.0
+  fast_share_max: 0.10  # a flight with a larger share of faster steps is not a free flight

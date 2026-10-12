@@ -5,3 +5,5 @@
 ::: xc_dynamics.preprocessing.altitude
 
 ::: xc_dynamics.preprocessing.clean
+
+::: xc_dynamics.preprocessing.speed
