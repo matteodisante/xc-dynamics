@@ -16,8 +16,8 @@ flowchart LR
     data[("data folder<br>flight lists,<br>tracks, catalog")]
     subgraph thesis ["Thesis"]
         direction TB
-        tscripts["thesis/scripts/<br>write the numbers"]
-        generated["thesis/generated/<br>macros and tables"]
+        tscripts["thesis/scripts/<br>write numbers and figures"]
+        generated["thesis/generated/<br>macros, tables, figures"]
         tex["thesis/main.tex<br>thesis/chapters/"]
         pdf["thesis/main.pdf"]
         tscripts -->|write| generated
@@ -60,14 +60,16 @@ speed statistics used to choose the speed thresholds.
 ### `thesis/`: the manuscript
 
 - `main.tex`, `preamble.tex`, `chapters/`: the LaTeX source. The text never types a
-  number that comes from the data or from a config: it writes a macro.
-- `scripts/`: the scripts that write those macros. `config.py` turns the thresholds
-  into macros; each chapter that quotes data has its own script (`02_dataset.py` for
-  chapter 2). They read what the analysis saved and never run it: at most they count
-  and take percentages.
-- `generated/`: the `.tex` files these scripts write, read by `main.tex` and the
-  chapters with `\input`. They are never edited by hand. They are committed, so the
-  thesis compiles on a machine without the data folder.
+  number that comes from the data or from a config: it writes a macro. Chapters are
+  named after their subject (`chapters/dataset.tex`); their order, and so their
+  numbers, is the list of `\input` in `main.tex`.
+- `scripts/`: the scripts that write those macros and figures. `config.py` turns the
+  thresholds into macros; each chapter that quotes data has its own script, named like
+  the chapter (`dataset.py`, `preprocessing.py`). They read what the analysis saved and
+  never run it: at most they count, take percentages and draw.
+- `generated/`: what these scripts write, `.tex` files in `tex/` and figures in
+  `figures/<chapter>/`, read by `main.tex` and the chapters. They are never edited by
+  hand. They are committed, so the thesis compiles on a machine without the data folder.
 - `build.sh`: runs the scripts, then compiles. See [Building the thesis](guides/thesis.md).
 
 ## Areas
@@ -85,9 +87,9 @@ docs/reference/<area>.md    its functions, from the docstrings
 
 `common` is the area of what all the others use; it has no script and no config.
 
-The thesis is split by chapter instead (`thesis/scripts/02_dataset.py`), since a chapter
+The thesis is split by chapter instead (`thesis/scripts/dataset.py`), since a chapter
 can draw on several areas. Pages such as [Pre-processing](preprocessing.md) join the two:
-each step of chapter 3 leads to its function.
+each step of the pre-processing chapter leads to its function.
 
 ## Rules
 

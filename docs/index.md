@@ -22,7 +22,7 @@ tests/              same structure as src/
 docs/               this documentation
 thesis/             the thesis, in LaTeX; build.sh compiles it
 thesis/scripts/     write the numbers the text quotes, from saved results
-thesis/generated/   what they write: macros and tables
+thesis/generated/   what they write: macros and tables in tex/, figures in figures/
 ```
 
 [Architecture](architecture.md) shows how these parts depend on each other.

@@ -1,15 +1,15 @@
-"""Numbers of chapter 2: flights per season and the counts quoted in the text.
+"""Numbers of the dataset chapter: flights per season and the counts quoted in the text.
 
 Reads the two catalogs written by scripts/download/download_ffvl.py and writes, in
-thesis/generated/:
+thesis/generated/tex/:
 
-    02-dataset-values.tex        macros quoted in the text, e.g. \\ParaFlights
-    02-dataset-seasons-para.tex  body of the paraglider season table
-    02-dataset-seasons-hang.tex  same for hang gliders
+    dataset-values.tex        macros quoted in the text, e.g. \\ParaFlights
+    dataset-seasons-para.tex  body of the paraglider season table
+    dataset-seasons-hang.tex  same for hang gliders
 
 Without the disk the committed files are kept.
 
-    uv run python thesis/scripts/02_dataset.py
+    uv run python thesis/scripts/dataset.py
 """
 
 from pathlib import Path
@@ -20,8 +20,8 @@ import yaml
 from xc_dynamics.download import ffvl
 
 REPO = Path(__file__).resolve().parents[2]
-OUT = REPO / "thesis" / "generated"
-HEADER = "% Written by thesis/scripts/02_dataset.py: do not edit.\n"
+OUT = REPO / "thesis" / "generated" / "tex"
+HEADER = "% Written by thesis/scripts/dataset.py: do not edit.\n"
 
 # Discipline in configs/download.yaml -> macro prefix.
 PREFIX = {"para": "Para", "hang": "Hang"}
@@ -108,11 +108,11 @@ def main() -> None:
         tables[prefix.lower()] = table(seasons)
 
     # All macros go in one file, each table in its own.
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     lines =[HEADER] + [f"\\newcommand{{\\{k}}}{{{v}}}\n" for k, v in values.items()]
-    (OUT / "02-dataset-values.tex").write_text("".join(lines))
+    (OUT / "dataset-values.tex").write_text("".join(lines))
     for name, text in tables.items():
-        (OUT / f"02-dataset-seasons-{name}.tex").write_text(text)
+        (OUT / f"dataset-seasons-{name}.tex").write_text(text)
     print(f"Wrote {len(values)} macros and {len(tables)} tables in {OUT}")
 
 

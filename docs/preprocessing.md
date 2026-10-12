@@ -1,10 +1,10 @@
 # Pre-processing: steps and modules
 
 The pre-processing turns each IGC file into a trajectory fit for analysis. The thesis
-describes it step by step, in chapter 3. The code does not number the steps, since the
-numbering belongs to the text: this page is the one place that joins the two. Find the
-step in the thesis, read across the row, and you have the function, the thresholds and
-the test.
+describes it step by step, in the pre-processing chapter, one section per step. The
+code does not number the steps: this page is the one place that joins the two, and its
+step numbers only give the order in which the steps run. Find the section in the
+thesis, read across the row, and you have the function, the thresholds and the test.
 
 ## Scheme
 
@@ -41,11 +41,11 @@ the tests in `tests/preprocessing/`, the thresholds in `configs/preprocessing.ya
 
 | Step | Thesis section | Function | Thresholds | Returns |
 |---|---|---|---|---|
-| 1 | 3.1 Reading the fixes | [`read_igc`][xc_dynamics.preprocessing.igc.read_igc] | none | the fixes, one row each |
-| 2 | 3.2 Choice of altitude channel | [`altitude_channel`][xc_dynamics.preprocessing.altitude.altitude_channel] | `altitude.*` | a verdict on the flight |
-| 3 | 3.3 Clock | [`increasing_time`][xc_dynamics.preprocessing.clean.increasing_time] | none | a mask of the fixes to keep |
-| 4 | 3.4 Repeated positions | [`moving_position`][xc_dynamics.preprocessing.clean.moving_position] | none | a mask of the fixes to keep |
-| 5 | 3.5 Fast tracks | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on the speeds of [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.*` | a verdict on the flight |
+| 1 | Reading the fixes | [`read_igc`][xc_dynamics.preprocessing.igc.read_igc] | none | the fixes, one row each |
+| 2 | Choice of altitude channel | [`altitude_channel`][xc_dynamics.preprocessing.altitude.altitude_channel] | `altitude.*` | a verdict on the flight |
+| 3 | Clock | [`increasing_time`][xc_dynamics.preprocessing.clean.increasing_time] | none | a mask of the fixes to keep |
+| 4 | Repeated positions | [`moving_position`][xc_dynamics.preprocessing.clean.moving_position] | none | a mask of the fixes to keep |
+| 5 | Fast tracks | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on the speeds of [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.*` | a verdict on the flight |
 
 ## Two kinds of step
 

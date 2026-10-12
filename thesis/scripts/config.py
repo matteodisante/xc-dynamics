@@ -13,7 +13,7 @@ import yaml
 
 REPO = Path(__file__).resolve().parents[2]
 CONFIGS = ["preprocessing.yaml"]  # download.yaml holds machine paths, not thresholds
-OUT = REPO / "thesis" / "generated" / "config.tex"
+OUT = REPO / "thesis" / "generated" / "tex" / "config.tex"
 
 
 def flatten(config: dict, name: str = "cfg"):
@@ -36,7 +36,7 @@ def main() -> None:
             if isinstance(value, float) and value.is_integer():
                 value = int(value)  # 30.0 -> 30
             lines.append(f"\\newcommand{{\\{name}}}{{{value}}}\n")
-    OUT.parent.mkdir(exist_ok=True)
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("".join(lines))
     print(f"Wrote {len(lines) - 1} macros in {OUT}")
 

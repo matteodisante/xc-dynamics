@@ -3,8 +3,8 @@
 \input{preamble}
 
 % Numbers written by the scripts in scripts/: the text quotes them through these macros.
-\input{generated/config}
-\input{generated/02-dataset-values}
+\input{generated/tex/config}
+\input{generated/tex/dataset-values}
 
 \begin{document}
 \hypersetup{pageanchor=false}
@@ -53,9 +53,10 @@ Sources and code: \url{https://github.com/matteodisante/xc-dynamics}\par}
 \begingroup
 \raggedbottom
 \setlength{\parskip}{4pt plus 1pt minus 1pt}
-\input{chapters/01-introduction}
-\input{chapters/02-dataset}
-\input{chapters/03-preprocessing}
+% The chapters, in order: this list alone sets their numbers.
+\input{chapters/introduction}
+\input{chapters/dataset}
+\input{chapters/preprocessing}
 \endgroup
 
 \bibliographystyle{unsrt}
