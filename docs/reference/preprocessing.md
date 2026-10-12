@@ -7,3 +7,5 @@
 ::: xc_dynamics.preprocessing.clean
 
 ::: xc_dynamics.preprocessing.speed
+
+::: xc_dynamics.preprocessing.flight

@@ -32,6 +32,19 @@ def step_speed(fixes: pd.DataFrame) -> np.ndarray:
     return 3.6 * distance / np.diff(fixes["t"].to_numpy())  # m/s -> km/h
 
 
+def speed_summary(fixes: pd.DataFrame) -> dict:
+    """Number of steps between fixes, and the median and 90th percentile of their
+    speed in km/h (NaN without steps)."""
+    speed = step_speed(fixes)
+    if not len(speed):
+        return {"steps": 0, "median_kmh": np.nan, "p90_kmh": np.nan}
+    return {
+        "steps": len(speed),
+        "median_kmh": float(np.median(speed)),
+        "p90_kmh": float(np.quantile(speed, 0.9)),
+    }
+
+
 def track_speed(fixes: pd.DataFrame, max_kmh: float, fast_share_max: float) -> dict:
     """Share of steps faster than the top speed (0 with fewer than two fixes), and
     whether the flight is kept (speed_ok)."""

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pytest import approx
 
-from xc_dynamics.preprocessing.speed import EARTH_RADIUS_M, step_speed, track_speed
+from xc_dynamics.preprocessing.speed import EARTH_RADIUS_M, speed_summary, step_speed, track_speed
 
 METRES_PER_DEGREE = EARTH_RADIUS_M * np.pi / 180
 
@@ -23,6 +23,19 @@ def test_step_speed_along_a_parallel_shrinks_with_latitude():
     fixes = pd.DataFrame({"t": [0.0, 10.0], "lat": [60.0, 60.0], "lon": [6.0, 6.001]})
     metres = METRES_PER_DEGREE * 0.001 * 0.5
     assert step_speed(fixes) == approx([3.6 * metres / 10], rel=1e-6)
+
+
+def test_speed_summary():
+    summary = speed_summary(northward([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]))
+    assert summary["steps"] == 10
+    assert summary["median_kmh"] == approx(55)
+    assert summary["p90_kmh"] == approx(91)  # 90 + 0.1 of the way to 100
+
+
+def test_speed_summary_without_steps():
+    summary = speed_summary(northward([]))
+    assert summary["steps"] == 0
+    assert np.isnan(summary["median_kmh"]) and np.isnan(summary["p90_kmh"])
 
 
 def test_few_fast_steps_keep_the_flight():
