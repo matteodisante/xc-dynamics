@@ -52,6 +52,7 @@ nav:
   - Guides:
       - Downloading the data: guides/download.md
       - Building the thesis: guides/thesis.md
+      - Running on another machine: guides/other-machine.md
   - Reference:
       - download: reference/download.md
       - preprocessing: reference/preprocessing.md
