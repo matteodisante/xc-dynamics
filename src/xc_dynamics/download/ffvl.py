@@ -3,6 +3,10 @@
 For each season the CFD (Coupe Fédérale de Distance) publishes an XML list of the
 declared flights, with a link to each .igc track. A season is named by its start
 year: 2024 is the season 2024-2025.
+
+Two folders: the data folder (root) holds the flight lists and the catalog; the
+tracks folder (tracks) holds raw/igc/. They can be the same folder, or the tracks
+can live elsewhere, for instance in a copy shared with another program.
 """
 
 import threading
@@ -89,15 +93,15 @@ def xml_path(root: Path, year: int) -> Path:
     return xml_dir(root) / f"{year}.xml"
 
 
-def igc_dir(root: Path, year: int) -> Path:
+def igc_dir(tracks: Path, year: int) -> Path:
     """Folder of the tracks of a season."""
-    return root / "raw" / "igc" / season_label(year)
+    return tracks / "raw" / "igc" / season_label(year)
 
 
-def igc_path(root: Path, year: int, flight: dict) -> Path:
+def igc_path(tracks: Path, year: int, flight: dict) -> Path:
     """Where the track of a flight is saved: {date}_{flight_id}.igc."""
     day = flight["date"] or "0000-00-00"  # a few flights have no date
-    return igc_dir(root, year) / f"{day}_{flight['id']}.igc"
+    return igc_dir(tracks, year) / f"{day}_{flight['id']}.igc"
 
 
 def catalog_path(root: Path) -> Path:
@@ -122,10 +126,10 @@ def looks_like_igc(data: bytes) -> bool:
     return data.lstrip().startswith(b"A") and b"\nB" in data
 
 
-def tracks_on_disk(root: Path, year: int) -> set[Path]:
+def tracks_on_disk(tracks: Path, year: int) -> set[Path]:
     """Tracks of a season already downloaded."""
     # One directory listing: checking each file on the exFAT SSD is 40x slower.
-    return set(igc_dir(root, year).glob("*.igc"))
+    return set(igc_dir(tracks, year).glob("*.igc"))
 
 
 def fetch_xml(discipline: str, root: Path, year: int) -> None:
@@ -133,12 +137,12 @@ def fetch_xml(discipline: str, root: Path, year: int) -> None:
     save(xml_path(root, year), get(f"{SITE[discipline]}/cfd/liste/{year}?xml=1"))
 
 
-def missing_tracks(root: Path, year: int) -> dict[Path, str]:
+def missing_tracks(root: Path, tracks: Path, year: int) -> dict[Path, str]:
     """Tracks of a season not yet on disk, as {local path: url}."""
-    on_disk = tracks_on_disk(root, year)
+    on_disk = tracks_on_disk(tracks, year)
     missing = {}
     for flight in read_flights(root, year):
-        path = igc_path(root, year, flight)
+        path = igc_path(tracks, year, flight)
         if has_track(flight) and path not in on_disk:
             missing[path] = flight["igc_tracklog_link"]
     return missing
@@ -162,12 +166,12 @@ def download_tracks(tracks: dict[Path, str], workers: int) -> Iterator[str | Non
         yield from pool.map(download_track, tracks.values(), tracks.keys())
 
 
-def build_catalog(root: Path) -> pd.DataFrame:
+def build_catalog(root: Path, tracks: Path) -> pd.DataFrame:
     """One row per flight in the saved season lists, with its local track if any."""
     rows = []
     for xml in sorted(xml_dir(root).glob("[0-9]*.xml")):  # skips macOS ._ files
         year = int(xml.stem)
-        on_disk = tracks_on_disk(root, year)
+        on_disk = tracks_on_disk(tracks, year)
         for flight in read_flights(root, year):
             row = {
                 "flight_id": flight["id"],
@@ -177,7 +181,9 @@ def build_catalog(root: Path) -> pd.DataFrame:
             row |= {col: flight.get(attr, "") for attr, col in CATALOG_COLUMNS.items()}
             if not has_track(flight):
                 row["igc_link"] = ""
-            path = igc_path(root, year, flight)
-            row["local_path"] = str(path) if path in on_disk else ""
+            path = igc_path(tracks, year, flight)
+            # Relative to the tracks folder, with / on every system: the catalog stays
+            # valid wherever the disk is mounted, on any machine.
+            row["local_path"] = path.relative_to(tracks).as_posix() if path in on_disk else ""
             rows.append(row)
     return pd.DataFrame(rows)

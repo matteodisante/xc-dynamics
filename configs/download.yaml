@@ -2,10 +2,15 @@
 
 workers: 4  # parallel downloads: keep it low, out of courtesy to the FFVL server
 
+# root: flight lists, catalog and results. tracks: the folder that holds raw/igc/;
+# here the copy in the viewer's data folder, which xc-dynamics only reads.
+
 para:
-  root: /Volumes/SSD_DISANTE/paragliders/ffvl_cfd_igc
+  root: /Volumes/SSD_DATA/paragliders/ffvl_cfd_igc
+  tracks: /Volumes/SSD_DATA/xc-viewer-data/paragliders
   seasons: 1999-2025  # a season is named by its start year: 2025 = 2025-2026
 
 delta:
-  root: /Volumes/SSD_DISANTE/hang_gliders/delta_cfd_igc
+  root: /Volumes/SSD_DATA/hang_gliders/delta_cfd_igc
+  tracks: /Volumes/SSD_DATA/xc-viewer-data/hang_gliders
   seasons: 2001-2025

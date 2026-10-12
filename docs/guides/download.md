@@ -26,7 +26,8 @@ again at the next run.
 | Key | Meaning |
 |---|---|
 | `workers` | number of parallel downloads |
-| `para.root`, `delta.root` | data folder |
+| `para.root`, `delta.root` | data folder: flight lists, catalog, results |
+| `para.tracks`, `delta.tracks` | tracks folder, the one that holds `raw/igc/` |
 | `para.seasons`, `delta.seasons` | seasons to download, e.g. `1999-2025` |
 
 A season is named by its start year: `2024` is the season from 1 September 2024 to
@@ -38,6 +39,7 @@ These options override the settings for a single run:
 |---|---|
 | `--seasons 2024`, `--seasons 2010-2015` | seasons to process |
 | `--root PATH` | data folder |
+| `--tracks PATH` | tracks folder |
 | `--limit N` | at most N tracks per season, for tests |
 
 !!! note "Updating a season"
@@ -49,9 +51,18 @@ These options override the settings for a single run:
 
 ```text
 raw/raw_xml/2024.xml                       flight list of the season
-raw/igc/2024-2025/{date}_{flight_id}.igc   one track per flight
 catalog/catalog.csv                        one row per flight
 ```
+
+The tracks are in the tracks folder:
+
+```text
+raw/igc/2024-2025/{date}_{flight_id}.igc   one track per flight
+```
+
+The two folders can be the same. Here they are not: the tracks are read from the
+data folder of the [XC Thermal Viewer](https://github.com/matteodisante/xc-thermal-viewer),
+so the archive is not stored twice.
 
 The `flight_id` in a track's name leads back to the flight's page,
 `https://parapente.ffvl.fr/cfd/liste/vol/{flight_id}` (or `delta.ffvl.fr`).
@@ -67,4 +78,5 @@ One row per flight in the saved lists, with these columns:
 - `takeoff`, `landing`, `dept` (French department)
 - `flight_link`, `pilot_link`, `tracklog_id`
 - `igc_link`: URL of the track, empty when the flight has none
-- `local_path`: the track on disk, empty when it is not downloaded
+- `local_path`: the track on disk, relative to the tracks folder
+  (`raw/igc/2024-2025/2024-07-01_123.igc`), empty when it is not downloaded

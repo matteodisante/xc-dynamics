@@ -6,10 +6,10 @@ XML = b"""<ffvldata><flights>
 </flights></ffvldata>"""
 
 
-def make_season(root):
+def make_season(root, tracks):
     """Save a season list with one flight with a track and one without; return the track path."""
     ffvl.save(ffvl.xml_path(root, 2024), XML)
-    return ffvl.igc_path(root, 2024, ffvl.read_flights(root, 2024)[0])
+    return ffvl.igc_path(tracks, 2024, ffvl.read_flights(root, 2024)[0])
 
 
 def test_looks_like_igc():
@@ -19,19 +19,21 @@ def test_looks_like_igc():
 
 
 def test_missing_tracks(tmp_path):
-    track = make_season(tmp_path)
-    assert ffvl.missing_tracks(tmp_path, 2024) == {track: "https://x/files/a.igc"}
+    root, tracks = tmp_path / "data", tmp_path / "tracks"
+    track = make_season(root, tracks)
+    assert ffvl.missing_tracks(root, tracks, 2024) == {track: "https://x/files/a.igc"}
     ffvl.save(track, b"A")
-    assert ffvl.missing_tracks(tmp_path, 2024) == {}
+    assert ffvl.missing_tracks(root, tracks, 2024) == {}
 
 
 def test_catalog(tmp_path):
-    track = make_season(tmp_path)
+    root, tracks = tmp_path / "data", tmp_path / "tracks"
+    track = make_season(root, tracks)
     ffvl.save(track, b"A")
 
-    catalog = ffvl.build_catalog(tmp_path)
+    catalog = ffvl.build_catalog(root, tracks)
 
     assert track.name == "2024-07-01_1.igc"
     assert list(catalog.flight_id) == ["1", "2"]
     assert list(catalog.igc_link) == ["https://x/files/a.igc", ""]
-    assert list(catalog.local_path) == [str(track), ""]
+    assert list(catalog.local_path) == ["raw/igc/2024-2025/2024-07-01_1.igc", ""]
