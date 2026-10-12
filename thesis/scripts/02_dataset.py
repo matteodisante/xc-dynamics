@@ -1,6 +1,6 @@
 """Numbers of chapter 2: flights per season and the counts quoted in the text.
 
-Reads the two catalogs written by scripts/download_ffvl.py and writes, in
+Reads the two catalogs written by scripts/download/download_ffvl.py and writes, in
 thesis/generated/:
 
     02-dataset-values.tex        macros quoted in the text, e.g. \\ParaFlights

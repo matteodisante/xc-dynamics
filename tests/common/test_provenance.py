@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from xc_dynamics.provenance import run_record
+from xc_dynamics.common.provenance import run_record
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 
 
 def test_record_in_the_repository():

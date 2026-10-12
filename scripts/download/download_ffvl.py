@@ -4,8 +4,8 @@ For each season: download the flight list if it is missing, then the missing tra
 Finally rebuild the catalog. Rerun at any time: what is already on disk is skipped.
 A saved flight list is never downloaded again; to update a season, delete its XML.
 
-    uv run python scripts/download_ffvl.py para
-    uv run python scripts/download_ffvl.py hang --seasons 2024 --root /tmp/test --tracks /tmp/test --limit 5
+    uv run python scripts/download/download_ffvl.py para
+    uv run python scripts/download/download_ffvl.py hang --seasons 2024 --root /tmp/test --tracks /tmp/test --limit 5
 
 Data and tracks folders, seasons and parallel downloads are set in configs/download.yaml.
 """
@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 from xc_dynamics.download import ffvl
 
-CONFIG = Path(__file__).resolve().parents[1] / "configs" / "download.yaml"
+CONFIG = Path(__file__).resolve().parents[2] / "configs" / "download.yaml"
 
 
 def parse_seasons(text: str) -> range:

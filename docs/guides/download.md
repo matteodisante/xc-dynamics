@@ -8,8 +8,8 @@ with its GPS track in IGC format: paragliders on `parapente.ffvl.fr`, hang glide
 ## Usage
 
 ```bash
-uv run python scripts/download_ffvl.py para    # paragliders
-uv run python scripts/download_ffvl.py hang    # hang gliders
+uv run python scripts/download/download_ffvl.py para    # paragliders
+uv run python scripts/download/download_ffvl.py hang    # hang gliders
 ```
 
 For each season the script downloads the flight list if it is not on disk, then the

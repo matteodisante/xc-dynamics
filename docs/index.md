@@ -15,9 +15,9 @@ uv sync
 ## Repository layout
 
 ```text
-scripts/            one entry point per task: reads configs/, calls src/
-src/xc_dynamics/    the logic, one subpackage per function
-configs/            settings: data folders, pre-processing thresholds
+src/xc_dynamics/    the logic, one subpackage per area
+scripts/            one entry point per task, one folder per area: reads configs/, calls src/
+configs/            settings, one file per area: data folders, pre-processing thresholds
 tests/              same structure as src/
 docs/               this documentation
 thesis/             the thesis, in LaTeX; build.sh compiles it

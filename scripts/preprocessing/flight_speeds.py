@@ -3,9 +3,9 @@
 Each flight with a track goes through the first steps (reading, altitude channel, clock,
 repeated positions); then the median and 90th percentile of its step speed are computed.
 
-    uv run python scripts/flight_speeds.py para
-    uv run python scripts/flight_speeds.py hang --sample 200
-    uv run python scripts/flight_speeds.py para --root E:/paragliders/ffvl_cfd_igc --tracks E:/xc-viewer-data/paragliders
+    uv run python scripts/preprocessing/flight_speeds.py para
+    uv run python scripts/preprocessing/flight_speeds.py hang --sample 200
+    uv run python scripts/preprocessing/flight_speeds.py para --root E:/paragliders/ffvl_cfd_igc --tracks E:/xc-viewer-data/paragliders
 
 Data and tracks folders come from configs/download.yaml, the thresholds of the steps
 from configs/preprocessing.yaml.
@@ -25,9 +25,9 @@ from tqdm import tqdm
 from xc_dynamics.download import ffvl
 from xc_dynamics.preprocessing.flight import preprocess
 from xc_dynamics.preprocessing.speed import speed_summary
-from xc_dynamics.provenance import now, run_record
+from xc_dynamics.common.provenance import now, run_record
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 CONFIGS = REPO / "configs"
 
 

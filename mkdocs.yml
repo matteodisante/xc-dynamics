@@ -55,3 +55,4 @@ nav:
   - Reference:
       - download: reference/download.md
       - preprocessing: reference/preprocessing.md
+      - common: reference/common.md

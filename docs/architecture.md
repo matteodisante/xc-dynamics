@@ -35,19 +35,21 @@ flowchart LR
 
 ### `src/xc_dynamics/`: the logic
 
-All the code that does the work, one subpackage per function: `download/` fetches the
-FFVL archive, `preprocessing/` reads the IGC tracks and tests them. A function takes
+All the code that does the work, one subpackage per area (see [Areas](#areas)):
+`download/` fetches the FFVL archive, `preprocessing/` reads the IGC tracks and tests
+them, `common/` holds what every script uses, such as the record of a run. A function takes
 every setting as an argument: it never reads `configs/`, and never imports `scripts/`
 or `thesis/`. So each function can be tested on its own (`tests/` mirrors this folder)
 and is documented from its docstring in the [Reference](reference/download.md).
 
 ### `scripts/`: the entry points
 
-One script per task, run from the command line. A script reads its settings in
-`configs/`, calls the functions of `src/` and saves what they return in the data folder.
-It only orchestrates: command-line options, the loop over seasons, progress and errors.
-Today there is `download_ffvl.py` ([guide](guides/download.md)); the pre-processing
-functions have no script yet.
+One script per task, run from the command line, in the folder of its area. A script
+reads its settings in `configs/`, calls the functions of `src/` and saves what they
+return in the data folder. It only orchestrates: command-line options, the loop over
+flights or seasons, progress and errors. Today there are `download/download_ffvl.py`
+([guide](guides/download.md)) and `preprocessing/flight_speeds.py`, which computes the
+speed statistics used to choose the speed thresholds.
 
 ### `configs/`: the settings
 
@@ -67,6 +69,25 @@ functions have no script yet.
   chapters with `\input`. They are never edited by hand. They are committed, so the
   thesis compiles on a machine without the data folder.
 - `build.sh`: runs the scripts, then compiles. See [Building the thesis](guides/thesis.md).
+
+## Areas
+
+The code is split by area, a function of the work: `download`, `preprocessing`, and
+later the analyses. An area has the same name at every level:
+
+```text
+src/xc_dynamics/<area>/     the logic
+tests/<area>/               its tests
+scripts/<area>/             its entry points
+configs/<area>.yaml         its settings, if it has any
+docs/reference/<area>.md    its functions, from the docstrings
+```
+
+`common` is the area of what all the others use; it has no script and no config.
+
+The thesis is split by chapter instead (`thesis/scripts/02_dataset.py`), since a chapter
+can draw on several areas. Pages such as [Pre-processing](preprocessing.md) join the two:
+each step of chapter 3 leads to its function.
 
 ## Rules
 

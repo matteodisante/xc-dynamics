@@ -1,4 +1,5 @@
-# Settings for scripts/download_ffvl.py. Edit them for your machine.
+# Data folders and download settings, for scripts/download/download_ffvl.py and for
+# every script that reads the data. Edit them for your machine, or pass --root/--tracks.
 
 workers: 4  # parallel downloads: keep it low, out of courtesy to the FFVL server
 
