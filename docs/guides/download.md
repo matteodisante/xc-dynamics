@@ -9,7 +9,7 @@ with its GPS track in IGC format: paragliders on `parapente.ffvl.fr`, hang glide
 
 ```bash
 uv run python scripts/download_ffvl.py para    # paragliders
-uv run python scripts/download_ffvl.py delta   # hang gliders
+uv run python scripts/download_ffvl.py hang    # hang gliders
 ```
 
 For each season the script downloads the flight list if it is not on disk, then the
@@ -26,9 +26,9 @@ again at the next run.
 | Key | Meaning |
 |---|---|
 | `workers` | number of parallel downloads |
-| `para.root`, `delta.root` | data folder: flight lists, catalog, results |
-| `para.tracks`, `delta.tracks` | tracks folder, the one that holds `raw/igc/` |
-| `para.seasons`, `delta.seasons` | seasons to download, e.g. `1999-2025` |
+| `para.root`, `hang.root` | data folder: flight lists, catalog, results |
+| `para.tracks`, `hang.tracks` | tracks folder, the one that holds `raw/igc/` |
+| `para.seasons`, `hang.seasons` | seasons to download, e.g. `1999-2025` |
 
 A season is named by its start year: `2024` is the season from 1 September 2024 to
 31 August 2025.

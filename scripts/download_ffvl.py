@@ -1,11 +1,11 @@
-"""Download paraglider (para) or hang-glider (delta) flights from the FFVL CFD.
+"""Download paraglider (para) or hang-glider (hang) flights from the FFVL CFD.
 
 For each season: download the flight list if it is missing, then the missing tracks.
 Finally rebuild the catalog. Rerun at any time: what is already on disk is skipped.
 A saved flight list is never downloaded again; to update a season, delete its XML.
 
     uv run python scripts/download_ffvl.py para
-    uv run python scripts/download_ffvl.py delta --seasons 2024 --root /tmp/test --tracks /tmp/test --limit 5
+    uv run python scripts/download_ffvl.py hang --seasons 2024 --root /tmp/test --tracks /tmp/test --limit 5
 
 Data and tracks folders, seasons and parallel downloads are set in configs/download.yaml.
 """
@@ -58,7 +58,7 @@ def write_catalog(root: Path, tracks: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download flights from the FFVL CFD.")
-    parser.add_argument("discipline", choices=["para", "delta"])
+    parser.add_argument("discipline", choices=["para", "hang"])
     parser.add_argument("--seasons", help="2024 or 2010-2015 (default: from the config)")
     parser.add_argument("--root", type=Path, help="data folder (default: from the config)")
     parser.add_argument("--tracks", type=Path, help="tracks folder (default: from the config)")

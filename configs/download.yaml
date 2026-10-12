@@ -10,7 +10,7 @@ para:
   tracks: /Volumes/SSD_DATA/xc-viewer-data/paragliders
   seasons: 1999-2025  # a season is named by its start year: 2025 = 2025-2026
 
-delta:
+hang:
   root: /Volumes/SSD_DATA/hang_gliders/delta_cfd_igc
   tracks: /Volumes/SSD_DATA/xc-viewer-data/hang_gliders
   seasons: 2001-2025

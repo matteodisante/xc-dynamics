@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 from curl_cffi import requests
 
-SITE = {"para": "https://parapente.ffvl.fr", "delta": "https://delta.ffvl.fr"}
+SITE = {"para": "https://parapente.ffvl.fr", "hang": "https://delta.ffvl.fr"}
 
 # XML attribute -> catalog column. The XML has more attributes; these are the useful ones.
 CATALOG_COLUMNS = {

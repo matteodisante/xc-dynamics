@@ -24,7 +24,7 @@ OUT = REPO / "thesis" / "generated"
 HEADER = "% Written by thesis/scripts/02_dataset.py: do not edit.\n"
 
 # Discipline in configs/download.yaml -> macro prefix.
-PREFIX = {"para": "Para", "delta": "Hang"}
+PREFIX = {"para": "Para", "hang": "Hang"}
 
 
 def per_season(catalog: pd.DataFrame) -> pd.DataFrame:
