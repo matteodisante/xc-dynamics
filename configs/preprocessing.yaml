@@ -8,6 +8,9 @@ altitude:
 
 speed:  # horizontal speed between consecutive fixes
   max_kmh:  # top speed of the discipline: a faster step is a recorder error
-    para: 108.0
-    hang: 198.0
+    para: 110.0
+    hang: 200.0  # provisional, to be set from the physical limit
+  median_max_kmh:  # a flight with a faster median step speed is not a free flight
+    para: 70.0
+    hang: 110.0
   fast_share_max: 0.10  # a flight with a larger share of faster steps is not a free flight
