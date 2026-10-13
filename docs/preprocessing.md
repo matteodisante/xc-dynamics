@@ -17,21 +17,24 @@ flowchart TD
     clock["3 · increasing_time<br>deletes fixes with a stale clock"]
     rep["4 · moving_position<br>deletes repeated positions"]
     speed["5 · track_speed<br>checks the speed of the track"]
-    todo["6 onwards, not written yet:<br>excursions, take-off and landing,<br>segments and grid, population,<br>local coordinates"]
+    exc["6 · excursions<br>deletes unreachable fixes,<br>splits where the track does not come back"]
+    todo["7 onwards, not written yet:<br>take-off and landing,<br>segments and grid, population,<br>local coordinates"]
     out[("clean trajectory")]
     drop(["flight dropped"])
 
-    igc --> read --> alt --> clock --> rep --> speed --> todo --> out
+    igc --> read --> alt --> clock --> rep --> speed --> exc --> todo --> out
     alt -->|"gnss_ok is false"| drop
     speed -->|"speed_ok is false"| drop
     cfg -.-> alt
     cfg -.-> speed
+    cfg -.-> exc
 
     classDef pending stroke-dasharray: 5 5
     class todo pending
 ```
 
-Steps 3 and 4 delete single fixes; steps 2 and 5 judge the whole flight and can drop it.
+Steps 3, 4 and 6 delete single fixes, and step 6 can also split the flight; steps 2 and 5
+judge the whole flight and can drop it.
 
 ## Map
 
@@ -46,18 +49,20 @@ the tests in `tests/preprocessing/`, the thresholds in `configs/preprocessing.ya
 | 3 | Clock | [`increasing_time`][xc_dynamics.preprocessing.clean.increasing_time] | none | a mask of the fixes to keep |
 | 4 | Repeated positions | [`moving_position`][xc_dynamics.preprocessing.clean.moving_position] | none | a mask of the fixes to keep |
 | 5 | Fast tracks | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on the speeds of [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.median_max_kmh` | a verdict on the flight |
+| 6 | Horizontal excursions | [`excursions`][xc_dynamics.preprocessing.excursion.excursions] | `speed.max_kmh`, `excursion.window_s` | a mask of the fixes to keep, and a mask of the first fix of each new segment |
 
 ## Two kinds of step
 
-- **Rules on fixes** (steps 3 and 4, in `clean.py`) return a boolean mask, `True` for the
-  fixes to keep. Each runs on the fixes the previous ones left, so the caller filters
-  between one rule and the next.
+- **Rules on fixes** (steps 3 and 4 in `clean.py`, step 6 in `excursion.py`) return a
+  boolean mask, `True` for the fixes to keep. Each runs on the fixes the previous ones
+  left, so the caller filters between one rule and the next. Step 6 also returns a
+  second mask, `True` on the first fix of each new segment: where the flight is split.
 - **Verdicts on a flight** (steps 2 and 5) return a dictionary with the measured
   quantities and a flag, `gnss_ok` or `speed_ok`, that says whether the flight stays.
   They never delete a fix.
 
-Step 5 divides by the time between fixes, so it needs the times the clock rule leaves:
-strictly increasing.
+Steps 5 and 6 divide by the time between fixes, so they need the times the clock rule
+leaves: strictly increasing.
 
 ## Thresholds
 

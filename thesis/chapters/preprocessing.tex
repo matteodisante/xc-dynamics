@@ -160,18 +160,42 @@ and~2. Flights of any other class are not shown.}
 \label{sec:excursions}
 
 A step faster than any glider of the discipline can fly is a recorder error. The
-excursion rule compares the steps with such a top speed, $v_{\max}$, which is read off
-the data.
+excursion rule uses a top speed $v_{\max}$, read off the data at the end of this section,
+to delete the fixes such steps lead to, or to split the flight where the track does not
+come back.
+
+The rule scans the fixes left by the previous steps in order, against an anchor $a$, the
+last fix accepted. Fix $j$ is reachable from the anchor if
+\begin{equation}
+  d(a,j)\leq v_{\max}\,(t_j-t_a),
+  \label{eq:reachable}
+\end{equation}
+with $d(a,j)$ the distance of Equation~\eqref{eq:haversine} between the two fixes. A
+reachable fix is accepted and becomes the anchor. An unreachable fix $j$ opens a block,
+and the rule looks for a later fix $k$ reachable from the anchor within
+$W=\SI{\cfgExcursionWindowS}{\second}$ of the opening, $t_k-t_j\leq W$. If there is one,
+the track went out and came back: fixes $j$ to $k-1$ are deleted and $k$ becomes the
+anchor. If there is none, the track does not come back: the flight is split between the
+anchor and fix $j$, and a new segment starts from $j$. A block still open at the end of
+the track is deleted.
+
+The first anchor of each segment, at the start of the track or after a split, is the
+first fix whose step to the next fix satisfies Equation~\eqref{eq:reachable}; the fixes
+before it are deleted. An anchor in the wrong place would make every good fix after it
+unreachable, while a wrong fix agrees with neither of its neighbours and so never
+becomes an anchor. The price is that a good fix followed by a spike is deleted with it.
+The rule leaves the fixes it accepted and the places where the flight is split, which a
+later step uses as the boundaries of its segments.
 
 The step speed of Equation~\eqref{eq:step-speed} mixes real flight with recorder
-errors, whose steps can be arbitrarily fast. Over a window of
-$W=\SI{\cfgExcursionWindowS}{\second}$ the speed from fix $i$ is
+errors, whose steps can be arbitrarily fast. Over a window of length $W$ the speed from
+fix $i$ is
 \begin{equation}
   u_i=\frac{d(i,j)}{t_j-t_i},\qquad j=\min\{k:\ t_k-t_i\geq W\},
   \label{eq:window-speed}
 \end{equation}
-where $d(i,j)$ is the distance of Equation~\eqref{eq:haversine} between fixes $i$ and
-$j$. Across a gap the window is longer than $W$. A single fix displaced by a distance $D$
+with $d(i,j)$ as in Equation~\eqref{eq:reachable}. Across a gap the window is longer than
+$W$. A single fix displaced by a distance $D$
 changes $u_i$ by at most $D/W$, against $D/\Delta t$ for the two steps that touch it, so
 the window speed follows real flight much further than the step speed
 (Figure~\ref{fig:top-speed}, lower row). Both distributions fall steeply; the step speed

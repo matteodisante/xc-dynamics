@@ -8,4 +8,6 @@
 
 ::: xc_dynamics.preprocessing.speed
 
+::: xc_dynamics.preprocessing.excursion
+
 ::: xc_dynamics.preprocessing.flight
