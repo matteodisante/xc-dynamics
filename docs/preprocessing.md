@@ -73,7 +73,12 @@ things:
   `thesis/scripts/preprocessing.py` from the output of
   `scripts/preprocessing/flight_speeds.py`.
 - `speed.max_kmh` judges a single step: a faster one is a recorder error. The horizontal
-  excursion rule, not written yet, will use it.
+  excursion rule, not written yet, will use it. It is read off the histograms of speed
+  and straightness of the steps ([`step_straightness`][xc_dynamics.preprocessing.speed.step_straightness]),
+  counted by `scripts/preprocessing/step_straightness.py`: real flight goes nearly
+  straight, a recorder error goes out and comes back, and the top speed is where the
+  straight steps end. Only steps of at most `straightness.dt_max_s` are counted, since
+  over a longer step a turn in a thermal looks like an out-and-back.
 
 ## Adding a step
 

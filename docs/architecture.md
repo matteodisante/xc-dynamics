@@ -48,8 +48,10 @@ One script per task, run from the command line, in the folder of its area. A scr
 reads its settings in `configs/`, calls the functions of `src/` and saves what they
 return in the data folder. It only orchestrates: command-line options, the loop over
 flights or seasons, progress and errors. Today there are `download/download_ffvl.py`
-([guide](guides/download.md)) and `preprocessing/flight_speeds.py`, which computes the
-speed statistics used to choose the speed thresholds.
+([guide](guides/download.md)), `preprocessing/flight_speeds.py`, which computes the
+speed statistics used to choose the threshold on the median speed, and
+`preprocessing/step_straightness.py`, which counts the steps by speed and straightness
+to choose the top speed of a step. What each one saves is in [Data folder](data.md).
 
 ### `configs/`: the settings
 

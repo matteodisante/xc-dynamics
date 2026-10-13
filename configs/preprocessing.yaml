@@ -13,3 +13,6 @@ speed:  # horizontal speed between consecutive fixes
   median_max_kmh:  # a flight with a faster median step speed is not a free flight
     para: 70.0
     hang: 110.0
+
+straightness:  # diagnostic of the steps, to choose speed.max_kmh
+  dt_max_s: 5.0  # longer steps are left out: a turn in a thermal would look like an out-and-back
