@@ -1,7 +1,7 @@
 """One flight through the pre-processing, in the order of the thesis.
 
-For now the steps written so far: reading, altitude channel, clock, repeated
-positions and fast tracks.
+The excursion rule needs a threshold chosen on the fixes it receives, so the steps before
+it can run on their own.
 """
 
 from pathlib import Path
@@ -14,8 +14,11 @@ from xc_dynamics.preprocessing.igc import read_igc
 from xc_dynamics.preprocessing.speed import track_speed
 
 
-def preprocess(path: str | Path, altitude: dict, median_max_kmh: float) -> tuple[pd.DataFrame, dict]:
-    """Run one IGC file through the steps; return the fixes left and a row of counters.
+def before_excursions(
+    path: str | Path, altitude: dict, median_max_kmh: float
+) -> tuple[pd.DataFrame, dict]:
+    """Run one IGC file through the pre-processing up to the excursion rule, excluded;
+    return the fixes as that rule receives them and a row of counters.
 
     altitude holds the thresholds of the altitude channel, median_max_kmh the speed
     threshold of the discipline (configs/preprocessing.yaml). A flight that fails the

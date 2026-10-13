@@ -1,4 +1,4 @@
-from xc_dynamics.preprocessing.flight import preprocess
+from xc_dynamics.preprocessing.flight import before_excursions
 
 ALTITUDE = dict(
     gnss_present_min=0.95,
@@ -29,7 +29,7 @@ def test_clock_then_repeated_positions(tmp_path):
         b(2, 30100, 1100),  # same position as the fix kept before it
         b(3, 30300, 1200),
     )
-    fixes, row = preprocess(path, ALTITUDE, MEDIAN_MAX_KMH)
+    fixes, row = before_excursions(path, ALTITUDE, MEDIAN_MAX_KMH)
     assert list(fixes.t) == [0, 1, 3]
     assert row["fixes_read"] == 5 and row["gnss_ok"]
     assert (row["clock_deleted"], row["repeated_deleted"]) == (1, 1)
@@ -37,7 +37,7 @@ def test_clock_then_repeated_positions(tmp_path):
 
 def test_flight_without_gnss_altitude_stops_at_the_altitude_channel(tmp_path):
     path = write(tmp_path, b(0, 30000, 0), b(1, 30100, 0), b(2, 30200, 0))
-    _, row = preprocess(path, ALTITUDE, MEDIAN_MAX_KMH)
+    _, row = before_excursions(path, ALTITUDE, MEDIAN_MAX_KMH)
     assert not row["gnss_ok"]
     assert "clock_deleted" not in row
 
@@ -46,9 +46,9 @@ def test_speed_rule_flags_a_fast_track_and_deletes_no_fix(tmp_path):
     # A thousandth of a minute of latitude is about 1.85 m and the fixes are 1 s apart:
     # 5 per step is about 33 km/h, 100 per step about 667 km/h.
     slow = write(tmp_path, b(0, 30000, 1000), b(1, 30005, 1100), b(2, 30010, 1200))
-    _, row = preprocess(slow, ALTITUDE, MEDIAN_MAX_KMH)
+    _, row = before_excursions(slow, ALTITUDE, MEDIAN_MAX_KMH)
     assert row["speed_ok"]
     fast = write(tmp_path, b(0, 30000, 1000), b(1, 30100, 1100), b(2, 30200, 1200))
-    fixes, row = preprocess(fast, ALTITUDE, MEDIAN_MAX_KMH)
+    fixes, row = before_excursions(fast, ALTITUDE, MEDIAN_MAX_KMH)
     assert not row["speed_ok"]
     assert len(fixes) == 3
