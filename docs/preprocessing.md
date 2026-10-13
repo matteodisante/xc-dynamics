@@ -72,8 +72,16 @@ things:
   It was read off the histograms of the median speed of every flight, drawn by
   `thesis/scripts/preprocessing.py` from the output of
   `scripts/preprocessing/flight_speeds.py`.
-- `speed.max_kmh` judges a single step: a faster one is a recorder error. The horizontal
-  excursion rule, not written yet, will use it.
+- `speed.max_kmh` judges a single step, in the horizontal excursion rule: a faster one is
+  a recorder error. It is read off the histograms of
+  `scripts/preprocessing/speed_histograms.py`, which count the speed of every step and
+  the speed over every window of `excursion.window_s` seconds
+  ([`window_speed`][xc_dynamics.preprocessing.speed.window_speed]). A single wrong fix
+  barely moves the speed over a window, so its histogram shows real flight alone, and
+  `speed.max_kmh` is where it ends. The window lasts W, the time the excursion rule waits
+  before it splits a flight: the rule splits only if the mean speed stays above
+  `speed.max_kmh` for W seconds, so a threshold above every real window speed never
+  splits real flight.
 
 ## Adding a step
 

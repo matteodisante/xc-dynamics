@@ -47,10 +47,9 @@ and is documented from its docstring in the [Reference](reference/download.md).
 One script per task, run from the command line, in the folder of its area. A script
 reads its settings in `configs/`, calls the functions of `src/` and saves what they
 return in the data folder. It only orchestrates: command-line options, the loop over
-flights or seasons, progress and errors. Today there are `download/download_ffvl.py`
-([guide](guides/download.md)) and `preprocessing/flight_speeds.py`, which computes the
-speed statistics used to choose the threshold on the median speed. What each one saves
-is in [Data folder](data.md).
+flights or seasons, progress and errors. Every script that writes to the data folder is
+listed in [Data folder](data.md), with the files it writes and who reads them; each
+script's docstring says what it is for and how to run it.
 
 ### `configs/`: the settings
 
