@@ -9,8 +9,8 @@ The script runs, from `thesis/`:
 1. `scripts/config.py`: one macro per threshold of `configs/preprocessing.yaml`.
 2. `scripts/dataset.py`: the numbers and the season tables of the dataset chapter, from
    the two catalogs of the [download](download.md).
-3. `scripts/preprocessing.py`: the figures of the pre-processing chapter, from the speed
-   statistics of every flight.
+3. `scripts/preprocessing.py`: the figures of the pre-processing chapter, from the
+   results of the pre-processing scripts (see [Data folder](../data.md)).
 4. `latexmk -pdf main.tex`.
 
 Without the data folder, steps 2 and 3 print a warning and leave the committed files as
@@ -41,6 +41,7 @@ compiles on a machine without the data folder.
 | `tex/dataset-seasons-para.tex` | `dataset.py` | the paraglider season table | `chapters/dataset.tex` |
 | `tex/dataset-seasons-hang.tex` | `dataset.py` | the hang-glider season table | `chapters/dataset.tex` |
 | `figures/preprocessing/median-speed*.pdf` | `preprocessing.py` | the median speed of every flight, by discipline and by wing class | `chapters/preprocessing.tex` |
+| `figures/preprocessing/top-speed.pdf` | `preprocessing.py` | the speed of steps and over windows, by wing class | `chapters/preprocessing.tex` |
 
 The macro files are read in the preamble of `main.tex`, so every chapter can use them.
 A table file holds only the `tabular`: its caption and label stay in the chapter.

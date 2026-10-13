@@ -2,9 +2,8 @@
 \label{ch:preproc}
 
 The pre-processing turns each IGC file into a trajectory fit for analysis. This
-chapter covers its first five steps, in the order they run: reading the fixes,
-choosing the altitude channel, deleting fixes with a stale clock or a repeated
-position, and dropping tracks that are too fast.
+chapter describes its steps in the order they run, one section per step. Some steps
+delete single fixes; others judge the whole flight and keep or drop it.
 
 \section{Reading the fixes}
 \label{sec:parsing}
@@ -155,4 +154,54 @@ tandem wings, certified or not, and every other label.}
 (Section~\ref{sec:glider}): Class~1, its Sport sub-class, and the rigid Classes~5
 and~2. Flights of any other class are not shown.}
 \label{fig:median-speed-hang-classes}
+\end{figure}
+
+\section{Horizontal excursions}
+\label{sec:excursions}
+
+A step faster than any glider of the discipline can fly is a recorder error. The
+excursion rule compares the steps with such a top speed, $v_{\max}$, which is read off
+the data.
+
+The step speed of Equation~\eqref{eq:step-speed} mixes real flight with recorder
+errors, whose steps can be arbitrarily fast. Over a window of
+$W=\SI{\cfgExcursionWindowS}{\second}$ the speed from fix $i$ is
+\begin{equation}
+  u_i=\frac{d(i,j)}{t_j-t_i},\qquad j=\min\{k:\ t_k-t_i\geq W\},
+  \label{eq:window-speed}
+\end{equation}
+where $d(i,j)$ is the distance of Equation~\eqref{eq:haversine} between fixes $i$ and
+$j$. Across a gap the window is longer than $W$. A single fix displaced by a distance $D$
+changes $u_i$ by at most $D/W$, against $D/\Delta t$ for the two steps that touch it, so
+the window speed follows real flight much further than the step speed
+(Figure~\ref{fig:top-speed}, lower row). Both distributions fall steeply; the step speed
+then turns into a long tail of errors, the window speed only later and much lower.
+
+The window speed still carries errors that last longer than $W$, such as a jump that
+never comes back. Split by wing class (Figure~\ref{fig:top-speed}, upper row), real
+flight depends on the wing: each class falls off in the order of its performance. The
+errors do not depend on the wing, and beyond the fall-off the curves of all classes
+merge into one common tail. Real flight therefore ends where the fastest class reaches
+that tail. We set $v_{\max}$ there for paragliders,
+\SI[per-mode=symbol]{\cfgSpeedMaxKmhPara}{\kilo\metre\per\hour}, and with a margin above
+the end of the rigid Class~2 curve for hang gliders,
+\SI[per-mode=symbol]{\cfgSpeedMaxKmhHang}{\kilo\metre\per\hour}.
+
+The window lasts as long as the time the excursion rule waits for a track to come
+back. The rule splits a flight only where the mean speed from the last accepted fix
+stays above $v_{\max}$ for $W$, so a threshold above every real window speed never
+splits real flight.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{generated/figures/preprocessing/top-speed}
+\caption{Ground speed in the flights kept by the previous steps. Upper row: speed over
+windows of \SI{\cfgExcursionWindowS}{\second}, Equation~\eqref{eq:window-speed}, for
+four wing classes of each discipline (Section~\ref{sec:glider}). Lower row, all classes
+together: speed of single steps, Equation~\eqref{eq:step-speed}, and over windows. Each
+curve is the share of its values per km/h, in bins of 5~km/h, on a logarithmic axis;
+values beyond the axis count in the share. Dashed line: the top speed $v_{\max}$,
+\SI[per-mode=symbol]{\cfgSpeedMaxKmhPara}{\kilo\metre\per\hour} for paragliders and
+\SI[per-mode=symbol]{\cfgSpeedMaxKmhHang}{\kilo\metre\per\hour} for hang gliders.}
+\label{fig:top-speed}
 \end{figure}
