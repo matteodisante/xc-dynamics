@@ -85,7 +85,7 @@ compared. In a run of fixes at the same position only the first is kept.
 \section{Fast tracks}
 \label{sec:fasttracks}
 
-A free flight spends much of its time climbing in thermals at a low ground speed, so
+A free flight spends part of its time climbing in thermals at a low ground speed, so
 the typical speed of its track stays well below the top speed of the wing. A track
 with a higher typical speed comes from something else, such as a powered aircraft or a
 file with compressed times, and the whole flight is dropped.
@@ -102,8 +102,8 @@ with the angles in radians, and the step speed is
 \begin{equation}
   v_i=\frac{d_i}{t_{i+1}-t_i},\qquad i=1,\dots,n-1,
   \label{eq:step-speed}
-\end{equation}
-in \si[per-mode=symbol]{\kilo\metre\per\hour}. The clock rule makes every denominator
+\end{equation}.
+The clock rule makes every denominator
 positive. The typical speed of the flight is the median of its step speeds,
 \begin{equation}
   \tilde v=\operatorname{median}\{v_1,\dots,v_{n-1}\},
@@ -128,9 +128,10 @@ Class~2 wings.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{generated/figures/preprocessing/median-speed}
-\caption{Median step speed $\tilde v$, Equation~\eqref{eq:median-speed}, of every
-flight past the altitude channel, in bins of 2~km/h on a logarithmic scale. Flights above 200~km/h are counted in the last bin. The dashed
-line marks the threshold,
+\caption{Median step speed $\tilde v$ (Equation~\eqref{eq:median-speed}) of every
+flight past the altitude channel, computed after the clock and repeated-position
+rules. Bins of 2~km/h, logarithmic vertical axis; flights above 200~km/h fall in the
+last bin. Dashed line: threshold,
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhPara}{\kilo\metre\per\hour} for
 paragliders and
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhHang}{\kilo\metre\per\hour} for hang
