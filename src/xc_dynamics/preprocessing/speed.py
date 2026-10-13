@@ -5,6 +5,9 @@ the median speed of its steps stays well below the top speed of the wing. A trac
 a faster median is not a free flight (a powered aircraft, a file with compressed time),
 so the whole flight is dropped. Single steps that are too fast are a different problem,
 left to the excursion rule.
+
+The speed over a window of some seconds is barely moved by a single wrong fix, so it shows
+how fast real flight goes, and serves to choose the top speed of the excursion rule.
 """
 
 import numpy as np
@@ -37,6 +40,24 @@ def step_speed(fixes: pd.DataFrame) -> np.ndarray:
     # From each fix (lat[:-1], lon[:-1]) to the next (lat[1:], lon[1:]).
     distance = distance_m(lat[:-1], lon[:-1], lat[1:], lon[1:])
     return 3.6 * distance / np.diff(fixes["t"].to_numpy())  # m/s -> km/h
+
+
+def window_speed(fixes: pd.DataFrame, window_s: float) -> np.ndarray:
+    """Mean horizontal speed in km/h over a window starting at each fix.
+
+    The window goes from fix i to the first fix j at least window_s seconds later, and the
+    speed is d(i, j) / (t_j - t_i). Across a gap the window is longer than window_s. The
+    fixes of the last window_s seconds have no such j, so there are fewer values than
+    fixes. The times must be increasing, as the clock rule leaves them.
+    """
+    t = fixes["t"].to_numpy()
+    lat, lon = fixes["lat"].to_numpy(), fixes["lon"].to_numpy()
+    # For each fix, the index of the first fix at least window_s later; len(t) if none.
+    end = np.searchsorted(t, t + window_s)
+    start = np.nonzero(end < len(t))[0]  # the fixes that have such an end
+    end = end[start]
+    distance = distance_m(lat[start], lon[start], lat[end], lon[end])
+    return 3.6 * distance / (t[end] - t[start])  # m/s -> km/h
 
 
 def speed_summary(fixes: pd.DataFrame) -> dict:
