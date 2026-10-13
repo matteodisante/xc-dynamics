@@ -13,7 +13,7 @@ flowchart LR
         src["src/xc_dynamics/<br>the logic"]
         scripts -->|call| src
     end
-    data[("data folder<br>flight lists,<br>tracks, catalog")]
+    data[("data folder<br>flight lists, tracks,<br>catalog, results")]
     subgraph thesis ["Thesis"]
         direction TB
         tscripts["thesis/scripts/<br>write numbers and figures"]

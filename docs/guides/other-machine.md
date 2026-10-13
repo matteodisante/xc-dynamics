@@ -9,7 +9,8 @@ data both ways; the other machine gets the code from GitHub and never pushes.
 - **Paths.** Saved files hold paths relative to the data folders (the catalog's
   `local_path`), so they work wherever the disk is mounted. Every script takes the
   folders on the command line, `--root` and `--tracks`.
-- **Record.** Every run saves a `run.yaml` next to its results: command, git commit,
+- **Record.** A script that computes results, such as `flight_speeds.py`, saves a
+  `run.yaml` next to them (the download does not): command, git commit,
   whether the code had uncommitted changes, machine, system, start and end time, and the
   thresholds it used.
 - **Results and trials.** A full run writes in `derived/` of the data folder: these are the
