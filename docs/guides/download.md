@@ -64,6 +64,9 @@ The two folders can be the same. Here they are not: the tracks are read from the
 data folder of the [XC Thermal Viewer](https://github.com/matteodisante/xc-thermal-viewer),
 so the archive is not stored twice.
 
+Every file of the two folders, with the scripts that read it, is listed in
+[Data folder](../data.md).
+
 The `flight_id` in a track's name leads back to the flight's page,
 `https://parapente.ffvl.fr/cfd/liste/vol/{flight_id}` (or `delta.ffvl.fr`).
 

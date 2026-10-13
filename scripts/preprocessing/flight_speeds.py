@@ -82,7 +82,7 @@ def main() -> None:
     result[counts] = result[counts].astype("Int64")
 
     # A full run is a result; a sample is only a trial, so it never lands in derived/.
-    out = root / ("scratch" if args.sample else "derived") / "speed"
+    out = root / ("scratch" if args.sample else "derived") / "preprocessing" / "speed"
     out.mkdir(parents=True, exist_ok=True)
     result.to_csv(out / "flights.csv", index=False)
 

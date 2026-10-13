@@ -1,8 +1,9 @@
 """Figures of the pre-processing chapter: the median step speed of every flight, to choose
 the speed thresholds.
 
-Reads derived/speed/flights.csv, written by scripts/preprocessing/flight_speeds.py, and
-the catalog of both disciplines, and writes, in thesis/generated/figures/preprocessing/:
+Reads derived/preprocessing/speed/flights.csv, written by
+scripts/preprocessing/flight_speeds.py, and the catalog of both disciplines, and writes, in
+thesis/generated/figures/preprocessing/:
 
     median-speed.pdf               one panel per discipline
     median-speed-para-classes.pdf  one panel per paraglider wing class
@@ -25,6 +26,7 @@ from xc_dynamics.download import ffvl
 
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "thesis" / "generated" / "figures" / "preprocessing"
+FLIGHTS_CSV = Path("derived", "preprocessing", "speed", "flights.csv")  # in the data folder
 
 LABEL = {"para": "Paragliders", "hang": "Hang gliders"}
 # Wing class in the catalog -> group in the figures, in panel order; any other class is "other".
@@ -43,7 +45,7 @@ def read_flights(root: Path, discipline: str) -> pd.DataFrame:
     """Median step speed and wing group of every flight past the altitude channel."""
     # One row per flight, written by scripts/preprocessing/flight_speeds.py; flight_id as
     # text, as in the catalog.
-    flights = pd.read_csv(root / "derived" / "speed" / "flights.csv", dtype={"flight_id": str})
+    flights = pd.read_csv(root / FLIGHTS_CSV, dtype={"flight_id": str})
     # The catalog, all as text; keep_default_na=False keeps empty cells as "".
     catalog = pd.read_csv(ffvl.catalog_path(root), dtype=str, keep_default_na=False)
     # Add to each flight its wing class, matching the rows by flight_id.
@@ -81,7 +83,7 @@ def main() -> None:
     thresholds = thresholds["speed"]["median_max_kmh"]
     roots = {d: Path(config[d]["root"]) for d in LABEL}
     # The data folders whose flights.csv does not exist (empty list if both do).
-    missing = [r for r in roots.values() if not (r / "derived" / "speed" / "flights.csv").exists()]
+    missing = [r for r in roots.values() if not (r / FLIGHTS_CSV).exists()]
     if missing:  # disk not mounted, or a run not done yet
         print(f"no speed results in {missing}: keeping the committed files.")
         return

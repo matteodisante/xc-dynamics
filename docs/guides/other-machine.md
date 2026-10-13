@@ -67,7 +67,7 @@ The folders on the disk, relative to its root:
 ## Back on the hub
 
 Open the `run.yaml` next to the results, for instance
-`derived/speed/run.yaml`, and check that:
+`derived/preprocessing/speed/run.yaml`, and check that:
 
 - `commit` is the one pushed in step 1;
 - `uncommitted_changes` is `false`;

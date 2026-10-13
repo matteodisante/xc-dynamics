@@ -82,3 +82,4 @@ things:
 2. Add the keys, if any, to `configs/preprocessing.yaml`.
 3. Add the module to [Reference](reference/preprocessing.md) if it is new.
 4. Add a node to the scheme and a row to the table above.
+5. If a script saves a result for the step, add its files to [Data folder](data.md).
