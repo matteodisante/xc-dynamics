@@ -1,7 +1,8 @@
 """Speed statistics of every flight, to calibrate the speed thresholds of the pre-processing.
 
-Each flight with a track goes through the first steps (reading, altitude channel, clock,
-repeated positions); then the median and 90th percentile of its step speed are computed.
+Each flight with a track goes through the steps written so far (reading, altitude channel,
+clock, repeated positions, fast tracks); then the median and 90th percentile of its step
+speed are computed.
 
     uv run python scripts/preprocessing/flight_speeds.py para
     uv run python scripts/preprocessing/flight_speeds.py hang --sample 200
@@ -31,10 +32,10 @@ REPO = Path(__file__).resolve().parents[2]
 CONFIGS = REPO / "configs"
 
 
-def one_flight(local_path: str, tracks: Path, altitude: dict) -> dict:
-    """The counters of the first steps and the speed summary of one flight."""
+def one_flight(local_path: str, tracks: Path, altitude: dict, median_max_kmh: float) -> dict:
+    """The counters of the steps and the speed summary of one flight."""
     try:
-        fixes, row = preprocess(tracks / local_path, altitude)
+        fixes, row = preprocess(tracks / local_path, altitude, median_max_kmh)
     except Exception as err:  # one broken file must not stop a run over the whole archive
         return {"error": f"{type(err).__name__}: {err}"}
     if row["gnss_ok"]:  # a flight dropped by the altitude channel gets no speeds
@@ -55,7 +56,9 @@ def main() -> None:
 
     # encoding="utf-8" everywhere: Windows would otherwise read and write text as cp1252.
     settings = yaml.safe_load((CONFIGS / "download.yaml").read_text(encoding="utf-8"))[args.discipline]
-    altitude = yaml.safe_load((CONFIGS / "preprocessing.yaml").read_text(encoding="utf-8"))["altitude"]
+    thresholds = yaml.safe_load((CONFIGS / "preprocessing.yaml").read_text(encoding="utf-8"))
+    altitude = thresholds["altitude"]
+    median_max_kmh = thresholds["speed"]["median_max_kmh"][args.discipline]
     root = args.root or Path(settings["root"])
     tracks = args.tracks or Path(settings["tracks"])
     if not root.is_dir() or not tracks.is_dir():
@@ -69,7 +72,7 @@ def main() -> None:
 
     # One process per core; each takes the flights in chunks, and map returns the rows
     # in the order of the catalog.
-    work = partial(one_flight, tracks=tracks, altitude=altitude)
+    work = partial(one_flight, tracks=tracks, altitude=altitude, median_max_kmh=median_max_kmh)
     with ProcessPoolExecutor(args.workers) as pool:
         rows = list(tqdm(pool.map(work, flights.local_path, chunksize=64), total=len(flights)))
     result = pd.DataFrame(rows)
@@ -90,7 +93,7 @@ def main() -> None:
         "root": str(root),
         "tracks": str(tracks),
         "sample": args.sample,
-        "thresholds": {"altitude": altitude},
+        "thresholds": {"altitude": altitude, "speed": {"median_max_kmh": median_max_kmh}},
         "flights": len(result),
         "unreadable": errors,
         "past_altitude_channel": kept,

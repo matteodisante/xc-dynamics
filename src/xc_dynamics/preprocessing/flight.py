@@ -1,7 +1,7 @@
 """One flight through the pre-processing, in the order of the thesis.
 
-For now the steps written so far: reading, altitude channel, clock and repeated
-positions.
+For now the steps written so far: reading, altitude channel, clock, repeated
+positions and fast tracks.
 """
 
 from pathlib import Path
@@ -11,14 +11,16 @@ import pandas as pd
 from xc_dynamics.preprocessing.altitude import altitude_channel
 from xc_dynamics.preprocessing.clean import increasing_time, moving_position
 from xc_dynamics.preprocessing.igc import read_igc
+from xc_dynamics.preprocessing.speed import track_speed
 
 
-def preprocess(path: str | Path, altitude: dict) -> tuple[pd.DataFrame, dict]:
+def preprocess(path: str | Path, altitude: dict, median_max_kmh: float) -> tuple[pd.DataFrame, dict]:
     """Run one IGC file through the steps; return the fixes left and a row of counters.
 
-    altitude holds the thresholds of the altitude channel (configs/preprocessing.yaml).
-    A flight that fails the altitude channel stops there: its row has gnss_ok False
-    and no counters of the later steps.
+    altitude holds the thresholds of the altitude channel, median_max_kmh the speed
+    threshold of the discipline (configs/preprocessing.yaml). A flight that fails the
+    altitude channel stops there: its row has gnss_ok False and no counters of the
+    later steps. A flight too fast for the speed rule has speed_ok False.
     """
     fixes = read_igc(path)
     row = {"fixes_read": len(fixes)} | altitude_channel(fixes, **altitude)
@@ -31,4 +33,7 @@ def preprocess(path: str | Path, altitude: dict) -> tuple[pd.DataFrame, dict]:
         keep = rule(fixes)
         row[f"{name}_deleted"] = int((~keep).sum())
         fixes = fixes[keep]
+    # The speed rule deletes no fix: it only adds median_kmh and speed_ok to the row.
+    # row |= d copies every key of the dictionary d into row.
+    row |= track_speed(fixes, median_max_kmh)
     return fixes, row
