@@ -14,7 +14,7 @@ longitude in degrees, together with the validity flag and the two altitudes
 $h_i^{\mathrm{baro}}$ and $h_i^{\mathrm{GNSS}}$. A record that does not follow the
 fixed layout of the format, or whose time of day or position is impossible, is
 discarded. A missing or unreadable altitude,
-including the zero the format uses for a missing reading, is marked as missing, and
+including the zero the format uses for a missing reading~\cite{fai_igc_spec}, is marked as missing, and
 the fix keeps its time and position.
 
 Time is measured in seconds from the first fix. Records carry only the time of day,
@@ -57,35 +57,79 @@ independent evidence; the mark does not decide whether the flight is kept.
 \section{Clock}
 \label{sec:clock}
 
-% To write. Code: clean.increasing_time, on the fixes as read (step 2 deletes none).
-% Fix i is kept iff t_i > max_{j<i} t_j. A repeated second keeps its first fix; a
-% backward step is deleted, with every fix after it until the clock passes the latest
-% time kept. Afterwards the times are strictly increasing (needed in Sec. fasttracks).
+A recorder can write a time equal to or earlier than the one before it. On the fixes
+as read, the clock rule keeps the first fix, and fix $i$ only if its time is later
+than that of every fix before it,
+\begin{equation}
+  t_i>\max_{j<i}t_j.
+  \label{eq:clock}
+\end{equation}
+Of several fixes with the same second, the first is kept. A backward step is deleted,
+and so is every fix after it until the clock passes the latest time already kept. The
+times left are strictly increasing, so every step between consecutive fixes has a
+positive duration (Section~\ref{sec:fasttracks}).
 
 \section{Repeated positions}
 \label{sec:repeated}
 
-% To write. Code: clean.moving_position, on the fixes the clock rule left.
-% Fix i is deleted iff lat_i = lat_{i-1} and lon_i = lon_{i-1}, exactly (same IGC
-% digits); altitude is not compared. In a run of identical positions only the first
-% fix stays. Reason: the recorder repeats its last position while the clock runs.
+Some recorders repeat their last position while the clock runs, so a fix can carry the
+coordinates of the one before it without being a new measurement. On the fixes left by
+the clock rule, numbered again in order, fix $i$ is deleted if
+\begin{equation}
+  \varphi_i=\varphi_{i-1}\qquad\text{and}\qquad\lambda_i=\lambda_{i-1}.
+  \label{eq:repeated}
+\end{equation}
+The comparison is exact: the two records carry the same digits. Altitudes are not
+compared. In a run of fixes at the same position only the first is kept.
 
 \section{Fast tracks}
 \label{sec:fasttracks}
 
-% To write. Code: speed.step_speed and speed.track_speed, on the fixes left by the
-% two rules above. Step speed v_i = 3.6 d_i / (t_{i+1} - t_i) in km/h, d_i the
-% haversine distance between fixes i and i+1 on a sphere of radius 6371 km. The
-% flight is kept iff the median of its v_i is <= the threshold (or it has no step).
-% The figures plot that median, one value per flight: write v_i and the median as
-% equations. The threshold max_kmh (single steps) belongs to the excursion rule.
+A free flight spends much of its time climbing in thermals at a low ground speed, so
+the typical speed of its track stays well below the top speed of the wing. A track
+with a higher typical speed comes from something else, such as a powered aircraft or a
+file with compressed times, and the whole flight is dropped.
+
+Let $n$ be the number of fixes left by the two previous rules. Between fix $i$ and
+fix $i+1$ the horizontal distance is taken on a sphere of radius
+$R=\SI{6371}{\kilo\metre}$, with the haversine formula
+\begin{equation}
+  d_i=2R\arcsin\sqrt{\sin^2\frac{\varphi_{i+1}-\varphi_i}{2}
+  +\cos\varphi_i\cos\varphi_{i+1}\sin^2\frac{\lambda_{i+1}-\lambda_i}{2}},
+  \label{eq:haversine}
+\end{equation}
+with the angles in radians, and the step speed is
+\begin{equation}
+  v_i=\frac{d_i}{t_{i+1}-t_i},\qquad i=1,\dots,n-1,
+  \label{eq:step-speed}
+\end{equation}
+in \si[per-mode=symbol]{\kilo\metre\per\hour}. The clock rule makes every denominator
+positive. The typical speed of the flight is the median of its step speeds,
+\begin{equation}
+  \tilde v=\operatorname{median}\{v_1,\dots,v_{n-1}\},
+  \label{eq:median-speed}
+\end{equation}
+and the flight is kept if $\tilde v$ does not exceed
+\SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhPara}{\kilo\metre\per\hour} for
+paragliders and
+\SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhHang}{\kilo\metre\per\hour} for hang
+gliders. A flight with fewer than two fixes has no step and is kept. The rule deletes
+no fix, and the median is not moved by a few wrong steps, such as a position spike:
+those are left to a later step.
+
+The thresholds were read off the distribution of $\tilde v$ over all flights
+(Figure~\ref{fig:median-speed}). In both disciplines the bulk of the distribution ends
+below the threshold, and beyond it only a sparse tail of single flights remains.
+Split by wing class (Figures~\ref{fig:median-speed-para-classes}
+and~\ref{fig:median-speed-hang-classes}), the bulk of every class stays below the
+threshold. The faster shoulder of the hang-glider distribution comes from the rigid
+Class~2 wings.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{generated/figures/preprocessing/median-speed}
-\caption{Median step speed of every flight past the altitude channel, computed on
-the fixes left by the clock and repeated-position rules, in bins of 2~km/h on a
-logarithmic scale. Flights above 200~km/h are counted in the last bin. The dashed
+\caption{Median step speed $\tilde v$, Equation~\eqref{eq:median-speed}, of every
+flight past the altitude channel, in bins of 2~km/h on a logarithmic scale. Flights above 200~km/h are counted in the last bin. The dashed
 line marks the threshold,
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhPara}{\kilo\metre\per\hour} for
 paragliders and
