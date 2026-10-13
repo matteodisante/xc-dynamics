@@ -2,13 +2,7 @@ import numpy as np
 import pandas as pd
 from pytest import approx
 
-from xc_dynamics.preprocessing.speed import (
-    EARTH_RADIUS_M,
-    speed_summary,
-    step_speed,
-    step_straightness,
-    track_speed,
-)
+from xc_dynamics.preprocessing.speed import EARTH_RADIUS_M, speed_summary, step_speed, track_speed
 
 METRES_PER_DEGREE = EARTH_RADIUS_M * np.pi / 180
 
@@ -66,20 +60,3 @@ def test_threshold_falls_between_just_below_and_just_above():
 def test_flight_without_steps_is_kept():
     result = track_speed(northward([]), median_max_kmh=110)
     assert np.isnan(result["median_kmh"]) and result["speed_ok"]
-
-
-def test_straight_track_has_straightness_one():
-    s = step_straightness(northward([36, 72, 108, 36]))
-    assert np.isnan(s[0]) and np.isnan(s[-1])  # end steps lack a neighbour
-    assert s[1:-1] == approx([1, 1])
-
-
-def test_spike_lowers_both_steps_that_touch_it():
-    # Along a meridian distances are proportional to latitude differences. The third fix
-    # is a spike: from 45.001 to 45.002 the track goes out to 45.010 and back, so the
-    # straightness there is 0.001 / (0.009 + 0.008) = 1/17.
-    lat = [45.000, 45.001, 45.010, 45.002, 45.003]
-    fixes = pd.DataFrame({"t": np.arange(5.0), "lat": lat, "lon": 6.0})
-    s = step_straightness(fixes)
-    assert np.isnan(s[0]) and np.isnan(s[-1])
-    assert s[1:-1] == approx([1 / 17, 1 / 17])

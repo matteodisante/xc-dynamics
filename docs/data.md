@@ -36,9 +36,6 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | `raw/igc/<season>/*.igc` (tracks folder) | `scripts/download/download_ffvl.py` | the track of a flight | `flight_speeds.py`, through the catalog's `local_path` |
 | `derived/preprocessing/speed/flights.csv` | `scripts/preprocessing/flight_speeds.py` | one row per flight: the counters and verdicts of the pre-processing steps, the median and 90th percentile of its step speed | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/speed/run.yaml` | `scripts/preprocessing/flight_speeds.py` | the [record](guides/other-machine.md#how-it-stays-consistent) of the run | you, before the thesis uses the result |
-| `derived/preprocessing/straightness/counts.npz` | `scripts/preprocessing/step_straightness.py` | for each wing class, the number of steps per bin of speed and straightness, with the bin edges | `thesis/scripts/preprocessing.py` (not yet) |
-| `derived/preprocessing/straightness/run.yaml` | `scripts/preprocessing/step_straightness.py` | the record of the run | you, before the thesis uses the result |
-
 ## Results and trials
 
 A full run writes in `derived/`, and a new run overwrites the previous one: its `run.yaml`
