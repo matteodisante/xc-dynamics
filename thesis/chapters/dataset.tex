@@ -38,7 +38,21 @@ Tracks are IGC files~\cite{fai_igc_spec}, plain-text records of the flight. Each
 \texttt{B} record is one \emph{fix}: UTC time, latitude and longitude, a validity flag,
 and two altitudes, the pressure altitude from the barometer and the GNSS altitude from
 the satellite fix. The sampling interval depends on the recorder and need not be
-constant within a flight. Some recorders log no pressure altitude.
+constant within a flight. We take as the sampling interval of a track the most frequent
+positive time between consecutive fixes; IGC times are whole seconds, so it is a whole
+number of seconds. Most paraglider tracks have an interval of one second, while
+hang-glider tracks are slower, often 5 or 10 seconds (Figure~\ref{fig:sampling-interval}).
+Some recorders log no pressure altitude.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{generated/figures/dataset/sampling-interval}
+\caption{Sampling interval of the tracks, the most frequent positive time between
+consecutive fixes, as a share of the tracks of each discipline with at least two
+distinct times. One bar per second; the last bar holds every interval longer than
+\SI{15}{\second}.}
+\label{fig:sampling-interval}
+\end{figure}
 
 The metadata give the date, the pilot, the take-off and landing sites, the wing
 model and class, the scored distance and the scoring category of the declared route
