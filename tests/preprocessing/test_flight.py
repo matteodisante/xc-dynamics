@@ -40,6 +40,7 @@ def test_flight_without_gnss_altitude_stops_at_the_altitude_channel(tmp_path):
     _, row = before_excursions(path, ALTITUDE, MEDIAN_MAX_KMH)
     assert not row["gnss_ok"]
     assert "clock_deleted" not in row
+    assert row["sampling_s"] == 1  # measured before any rule
 
 
 def test_speed_rule_flags_a_fast_track_and_deletes_no_fix(tmp_path):

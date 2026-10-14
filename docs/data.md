@@ -38,7 +38,7 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | `derived/preprocessing/speed/run.yaml` | `scripts/preprocessing/flight_speeds.py` | the [record](guides/other-machine.md#how-it-stays-consistent) of the run | you, before the thesis uses the result |
 | `derived/preprocessing/speed_histograms/counts.npz` | `scripts/preprocessing/speed_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per km/h of speed, with the bin edges | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/speed_histograms/run.yaml` | `scripts/preprocessing/speed_histograms.py` | the record of the run | you, before the thesis uses the result |
-| `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the counters and verdicts of the steps before the excursion rule, the fixes the rule receives, and the fixes it deletes and the splits it makes with `excursion.window_s`, `excursion.window_short_s` and `excursion.window_long_s` | `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the sampling interval of the track as read, the counters and verdicts of the steps before the excursion rule, the fixes the rule receives, and the fixes it deletes and the splits it makes with `excursion.window_s`, `excursion.window_short_s` and `excursion.window_long_s` | `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/excursion/run.yaml` | `scripts/preprocessing/excursion_counts.py` | the record of the run | you, before the thesis uses the result |
 
 ## Results and trials

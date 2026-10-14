@@ -11,6 +11,7 @@ import pandas as pd
 from xc_dynamics.preprocessing.altitude import altitude_channel
 from xc_dynamics.preprocessing.clean import increasing_time, moving_position
 from xc_dynamics.preprocessing.igc import read_igc
+from xc_dynamics.preprocessing.sampling import sampling_interval
 from xc_dynamics.preprocessing.speed import track_speed
 
 
@@ -18,7 +19,8 @@ def before_excursions(
     path: str | Path, altitude: dict, median_max_kmh: float
 ) -> tuple[pd.DataFrame, dict]:
     """Run one IGC file through the pre-processing up to the excursion rule, excluded;
-    return the fixes as that rule receives them and a row of counters.
+    return the fixes as that rule receives them and a row with the sampling interval of
+    the track as read and the counters of the steps.
 
     altitude holds the thresholds of the altitude channel, median_max_kmh the speed
     threshold of the discipline (configs/preprocessing.yaml). A flight that fails the
@@ -26,7 +28,9 @@ def before_excursions(
     later steps. A flight too fast for the speed rule has speed_ok False.
     """
     fixes = read_igc(path)
-    row = {"fixes_read": len(fixes)} | altitude_channel(fixes, **altitude)
+    # The sampling interval is a property of the logger, so it is measured before any rule.
+    row = {"fixes_read": len(fixes), "sampling_s": sampling_interval(fixes)}
+    row |= altitude_channel(fixes, **altitude)
     if not row["gnss_ok"]:
         return fixes, row
     # Each rule runs on the fixes the previous one left.

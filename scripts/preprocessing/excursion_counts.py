@@ -3,8 +3,9 @@ W, to see how much the splits depend on W (excursion.window_s, excursion.window_
 excursion.window_long_s).
 
 Each flight with a track goes through the pre-processing up to the excursion rule
-(before_excursions). A flight kept by the altitude channel and the speed rule then goes
-through the excursion rule three times, once with each window, on the same fixes.
+(before_excursions), whose row also holds the sampling interval of the track as read. A
+flight kept by the altitude channel and the speed rule then goes through the excursion
+rule three times, once with each window, on the same fixes.
 
     uv run python scripts/preprocessing/excursion_counts.py para
     uv run python scripts/preprocessing/excursion_counts.py hang --sample 200
