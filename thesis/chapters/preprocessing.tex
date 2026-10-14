@@ -3,7 +3,8 @@
 
 The pre-processing turns each IGC file into a trajectory fit for analysis. This
 chapter describes its steps in the order they run, one section per step. Some steps
-delete single fixes; others judge the whole flight and keep or drop it.
+delete single fixes, and one of them also splits the flight; others judge the whole
+flight and keep or drop it.
 
 \section{Reading the fixes}
 \label{sec:parsing}
@@ -49,9 +50,9 @@ altitude is never substituted for a missing GNSS value.
 
 The barometer is checked with the same two conditions on $h^{\mathrm{baro}}$, with
 thresholds \cfgAltitudeBaroWitnessPresentMin\ and
-\SI{\cfgAltitudeBaroWitnessMinRangeM}{\metre}. A flight whose
+\SI{\cfgAltitudeBaroWitnessMinRangeM}{\metre}. \textcolor{red}{A flight whose
 barometer passes is marked, so that later cleaning steps can use pressure altitude as
-independent evidence; the mark does not decide whether the flight is kept.
+independent evidence; the mark does not decide whether the flight is kept.}
 
 \section{Clock}
 \label{sec:clock}
@@ -99,11 +100,10 @@ $R=\SI{6371}{\kilo\metre}$, with the haversine formula
 \end{equation}
 with the angles in radians, and the step speed is
 \begin{equation}
-  v_i=\frac{d_i}{t_{i+1}-t_i},\qquad i=1,\dots,n-1,
+  v_i=\frac{d_i}{t_{i+1}-t_i},\qquad i=1,\dots,n-1.
   \label{eq:step-speed}
-\end{equation}.
-The clock rule makes every denominator
-positive. The typical speed of the flight is the median of its step speeds,
+\end{equation}
+The clock rule makes every denominator positive. The typical speed of the flight is the median of its step speeds,
 \begin{equation}
   \tilde v=\operatorname{median}\{v_1,\dots,v_{n-1}\},
   \label{eq:median-speed}
@@ -114,7 +114,7 @@ paragliders and
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhHang}{\kilo\metre\per\hour} for hang
 gliders. A flight with fewer than two fixes has no step and is kept. The rule deletes
 no fix, and the median is not moved by a few wrong steps, such as a position spike:
-those are left to a later step.
+those are left to the excursion rule (Section~\ref{sec:excursions}).
 
 The thresholds were read off the distribution of $\tilde v$ over all flights
 (Figure~\ref{fig:median-speed}). In both disciplines the bulk of the distribution ends
@@ -238,7 +238,8 @@ first fix whose step to the next is reachable.}
 
 Computed from every fix, the window speed also follows real flight much further than the
 step speed. A single fix displaced by a distance $D$ changes $u_i$ by at most $D/W$,
-against $D/\Delta t$ for the two steps that touch it. Both distributions fall steeply
+against $D/\Delta t$ for each of the two steps that touch it, $\Delta t$ being their
+duration. Both distributions fall steeply
 (Figure~\ref{fig:top-speed}, lower row); the step speed then turns into a long tail of
 errors, the window speed only later and much lower.
 
