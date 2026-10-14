@@ -15,7 +15,13 @@ speed.max_kmh:
 
     top-speed.pdf                  window speed by wing class; steps against windows
 
-A figure whose results are not on disk keeps its committed file.
+From derived/preprocessing/excursion/flights.csv (scripts/preprocessing/excursion_counts.py),
+the flights split and the fixes deleted by the excursion rule with half W, W and twice W,
+in thesis/generated/tex/:
+
+    preprocessing-excursion.tex    body of the table, one row per window
+
+A figure or table whose results are not on disk keeps its committed file.
 
     uv run python thesis/scripts/preprocessing.py
 """
@@ -55,6 +61,10 @@ GROUP_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]  # one per group, in
 STEP_COLOR, WINDOW_COLOR = "#eb6834", "#2a78d6"
 REBIN = 5  # km/h per plotted bin; the saved bins are 1 km/h wide
 SPEED_RANGE = (40, 300)  # km/h shown
+
+# Excursion table.
+EXCURSION_CSV = Path("derived", "preprocessing", "excursion", "flights.csv")  # in the data folder
+TEX = REPO / "thesis" / "generated" / "tex"
 
 
 def read_flights(root: Path, discipline: str) -> pd.DataFrame:
@@ -171,14 +181,53 @@ def median_speed_figures(roots: dict, median_max_kmh: dict) -> None:
         save(fig, f"median-speed-{d}-classes.pdf")
 
 
+def excursion_table(roots: dict, excursion: dict) -> None:
+    """Body of the excursion table: one row per window and, for each discipline, the share
+    of flights split at least once and the share of fixes deleted."""
+    # Prefix of the columns in flights.csv -> window in seconds, in the order of the rows.
+    windows = {
+        "short": excursion["window_short_s"],
+        "excursion": excursion["window_s"],
+        "long": excursion["window_long_s"],
+    }
+    # Only the flights that went through the rule: the others have no excursion_fixes.
+    flights = {}
+    for d, root in roots.items():
+        flights[d] = pd.read_csv(root / EXCURSION_CSV).dropna(subset=["excursion_fixes"])
+
+    header = ""
+    for d, f in flights.items():
+        header += f" & \\multicolumn{{2}}{{c}}{{{LABEL[d]} (\\num{{{len(f)}}} flights)}}"
+    lines = [
+        "% Written by thesis/scripts/preprocessing.py: do not edit.\n",
+        "\\begin{tabular}{@{}rrrrr@{}}\n",
+        "\\toprule\n",
+        header + " \\\\\n",
+        "\\cmidrule(lr){2-3}\\cmidrule(l){4-5}\n",
+        "$W$ (s) & Flights split (\\%) & Fixes deleted (\\%) & Flights split (\\%) & Fixes deleted (\\%) \\\\\n",
+        "\\midrule\n",
+    ]
+    for prefix, window_s in windows.items():
+        row = f"{window_s:g}"
+        for f in flights.values():
+            split = 100 * f[f"{prefix}_splits"].gt(0).mean()
+            deleted = 100 * f[f"{prefix}_deleted"].sum() / f.excursion_fixes.sum()
+            row += f" & {split:.2f} & {deleted:.3f}"
+        lines.append(row + " \\\\\n")
+    lines += ["\\bottomrule\n", "\\end{tabular}\n"]
+    TEX.mkdir(parents=True, exist_ok=True)
+    (TEX / "preprocessing-excursion.tex").write_text("".join(lines))
+    print(f"Wrote {TEX / 'preprocessing-excursion.tex'}")
+
+
 def main() -> None:
     config = yaml.safe_load((REPO / "configs" / "download.yaml").read_text(encoding="utf-8"))
     thresholds = yaml.safe_load((REPO / "configs" / "preprocessing.yaml").read_text(encoding="utf-8"))
     roots = {d: Path(config[d]["root"]) for d in LABEL}
     OUT.mkdir(parents=True, exist_ok=True)
 
-    # Each figure is redrawn only if its results are in both data folders: without the disk,
-    # or before a run, the committed file stays.
+    # Each figure or table is redrawn only if its results are in both data folders: without
+    # the disk, or before a run, the committed file stays.
     if all((root / FLIGHTS_CSV).exists() for root in roots.values()):
         median_speed_figures(roots, thresholds["speed"]["median_max_kmh"])
     else:
@@ -187,6 +236,10 @@ def main() -> None:
         top_speed_figure(roots, thresholds["speed"]["max_kmh"], thresholds["excursion"]["window_s"])
     else:
         print(f"{HISTOGRAMS_NPZ} missing: keeping the committed top-speed figure.")
+    if all((root / EXCURSION_CSV).exists() for root in roots.values()):
+        excursion_table(roots, thresholds["excursion"])
+    else:
+        print(f"{EXCURSION_CSV} missing: keeping the committed excursion table.")
 
 
 if __name__ == "__main__":
