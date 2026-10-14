@@ -16,3 +16,6 @@ speed:  # horizontal speed between consecutive fixes
 
 excursion:  # horizontal excursions
   window_s: 20.0  # W: a block that does not rejoin within W splits the flight
+  # Half and twice W, only to count how much the splits depend on W.
+  window_short_s: 10.0
+  window_long_s: 40.0
