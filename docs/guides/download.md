@@ -72,14 +72,5 @@ The `flight_id` in a track's name leads back to the flight's page,
 
 ## Catalog
 
-One row per flight in the saved lists, with these columns:
-
-- `flight_id`, `season` (`2024-2025`), `season_year` (`2024`)
-- `date`: can be incomplete (`2000-00-00`) or empty
-- `pilot`, `club`, `wing` (glider model), `wing_class`
-- `flight_type`, `distance_km`, `points` (CFD score), `duration_s`, `speed` (km/h)
-- `takeoff`, `landing`, `dept` (French department)
-- `flight_link`, `pilot_link`, `tracklog_id`
-- `igc_link`: URL of the track, empty when the flight has none
-- `local_path`: the track on disk, relative to the tracks folder
-  (`raw/igc/2024-2025/2024-07-01_123.igc`), empty when it is not downloaded
+One row per flight in the saved lists. Its columns, with an example row, are described
+in [Data folder](../data.md#catalog).
