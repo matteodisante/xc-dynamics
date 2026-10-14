@@ -15,6 +15,11 @@ speed.max_kmh:
 
     top-speed.pdf                  window speed by wing class; steps against windows
 
+From two synthetic tracks judged by the excursion rule itself, with excursion.window_s:
+
+    excursion-rule.pdf             a block that comes back; a jump that does not
+    excursion-real-flight.pdf      real flight faster than the top speed, split or not
+
 From derived/preprocessing/excursion/flights.csv (scripts/preprocessing/excursion_counts.py),
 the flights split and the fixes deleted by the excursion rule with half W, W and twice W,
 in thesis/generated/tex/:
@@ -34,6 +39,8 @@ import pandas as pd
 import yaml
 
 from xc_dynamics.download import ffvl
+from xc_dynamics.preprocessing.excursion import excursions
+from xc_dynamics.preprocessing.speed import EARTH_RADIUS_M
 
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "thesis" / "generated" / "figures" / "preprocessing"
@@ -65,6 +72,13 @@ SPEED_RANGE = (40, 300)  # km/h shown
 # Excursion table.
 EXCURSION_CSV = Path("derived", "preprocessing", "excursion", "flights.csv")  # in the data folder
 TEX = REPO / "thesis" / "generated" / "tex"
+
+# Excursion rule figure: synthetic tracks along one coordinate, judged by the rule itself.
+SCHEME_SPEED = 5.0  # m/s, the speed of the glider
+SCHEME_MAX_SPEED = 12.0  # m/s, a top speed low enough for the cone to show
+BURST_SPEED = 25.0  # m/s, real flight faster than that top speed
+METRES_PER_DEGREE = EARTH_RADIUS_M * np.pi / 180  # along a meridian
+DELETED_COLOR, CUT_COLOR, CONE_COLOR = "#eb6834", "#c0392b", "#dce6f5"
 
 
 def read_flights(root: Path, discipline: str) -> pd.DataFrame:
@@ -181,6 +195,103 @@ def median_speed_figures(roots: dict, median_max_kmh: dict) -> None:
         save(fig, f"median-speed-{d}-classes.pdf")
 
 
+def draw_rule(ax: plt.Axes, t: np.ndarray, x: np.ndarray, window_s: float) -> tuple:
+    """Judge the track x(t), in metres along one coordinate, with the excursion rule; draw
+    the fixes kept and deleted, the anchor and its cone. Return keep, split_before and the
+    index of the anchor."""
+    # The positions as fixes along a meridian, x metres north of 45 N.
+    fixes = pd.DataFrame({"t": t, "lat": 45 + x / METRES_PER_DEGREE, "lon": 6.0})
+    keep, split_before = excursions(fixes, 3.6 * SCHEME_MAX_SPEED, window_s)  # m/s -> km/h
+    # The block opens at the first fix deleted or split from the track; the anchor is the
+    # fix before it.
+    a = np.flatnonzero(~keep | split_before)[0] - 1
+    # Cone: the positions reachable from the anchor, |x - x_a| <= v_max (t - t_a).
+    reach = SCHEME_MAX_SPEED * (t[a:] - t[a])
+    ax.fill_between(t[a:], x[a] - reach, x[a] + reach, color=CONE_COLOR, linewidth=0)
+    ax.plot(t[keep], x[keep], "o", color="grey", markersize=2.5)
+    ax.plot(t[~keep], x[~keep], "x", color=DELETED_COLOR, markersize=5)
+    ax.plot(t[a], x[a], "o", color=BAR, markersize=5)
+    ax.annotate("anchor", (t[a], x[a]), (t[a] - 9, x[a] + 110),
+                arrowprops={"arrowstyle": "-", "color": INK})
+    ax.set_xlabel("time (s)")
+    return keep, split_before, a
+
+
+def excursion_rule_figure(window_s: float) -> None:
+    """The excursion rule on two synthetic tracks along one coordinate, one fix per second:
+    a block that comes back (left) and a jump that does not (right)."""
+    t = np.arange(12 + window_s + 15)  # long enough to show the whole window after fix 12
+    with plt.rc_context({"font.size": 8}):
+        fig, axes = plt.subplots(1, 2, figsize=(6.3, 2.8), sharey=True, layout="constrained")
+
+        # (a) Three fixes off the track, then back on it.
+        x = SCHEME_SPEED * t
+        x[12:15] = 220
+        keep, _, a = draw_rule(axes[0], t, x, window_s)
+        k = a + 1 + np.argmax(keep[a + 1:])  # the first fix kept after the anchor: the return
+        axes[0].plot(t[k], x[k], "o", markerfacecolor="none", markeredgecolor=BAR, markersize=7)
+        axes[0].annotate("first fix back\nin the cone", (t[k], x[k]), (t[k] + 6, x[k] - 70),
+                         arrowprops={"arrowstyle": "-", "color": INK})
+        axes[0].text(t[a] + 5, 220, "deleted", color=DELETED_COLOR, va="center")
+        axes[0].set_title("(a) the block comes back: deleted")
+        axes[0].set_ylabel("position (m)")
+
+        # (b) From fix 12 on, the track is 420 m further and stays there.
+        x = SCHEME_SPEED * t
+        x[12:] += 420
+        _, split_before, a = draw_rule(axes[1], t, x, window_s)
+        j = np.flatnonzero(split_before)[0]  # the first fix of the new segment
+        axes[1].axvspan(t[j], t[j] + window_s, color="0.92", zorder=0)
+        axes[1].axvline((t[j - 1] + t[j]) / 2, color=CUT_COLOR, linewidth=1)
+        axes[1].text(t[j] + 1, 650, f"W = {window_s:g} s", color=INK)
+        axes[1].text(t[j] + 1, 330, "split: a new\nsegment starts here", color=CUT_COLOR)
+        axes[1].set_title("(b) no return within W: split")
+
+        axes[0].set_ylim(-30, 700)
+        for ax in axes:
+            ax.set_xlim(t[0] - 1, t[-1] + 1)
+        write(fig, "excursion-rule.pdf")
+
+
+def real_flight_figure(window_s: float) -> None:
+    """Real flight faster than the top speed, on synthetic tracks along one coordinate, one
+    fix per second: a short burst that the rule does not split (left), and a burst that
+    lasts most of the window and is split (right)."""
+    t = np.arange(12 + window_s + 15)  # long enough to show the whole window after fix 12
+    titles = [r"(a) $u_a\leq v_{\max}$: no split", r"(b) $u_a>v_{\max}$: split"]
+    with plt.rc_context({"font.size": 8}):
+        fig, axes = plt.subplots(1, 2, figsize=(6.3, 2.8), sharey=True, layout="constrained")
+        for ax, burst, title in zip(axes, [3, 15], titles):
+            # Steps at SCHEME_SPEED, except `burst` steps at BURST_SPEED from fix 11 on.
+            steps = np.full(len(t) - 1, SCHEME_SPEED)
+            steps[11:11 + burst] = BURST_SPEED
+            x = np.r_[0, np.cumsum(steps)]
+            keep, split_before, a = draw_rule(ax, t, x, window_s)
+
+            # The block opens at the fix after the anchor; the rule waits window_s from there.
+            ax.axvspan(t[a + 1], t[a + 1] + window_s, color="0.92", zorder=0)
+            # The window of length window_s from the anchor ends at fix l (Equation
+            # window-speed); the slope of the dashed line is the window speed u_a.
+            l = np.searchsorted(t, t[a] + window_s)
+            ax.plot([t[a], t[l]], [x[a], x[l]], "--", color=INK, linewidth=1)
+            ax.plot(t[l], x[l], "s", color=INK, markersize=4)
+            ax.text(t[l] + 1, x[l] - 10, r"$\ell$", color=INK, va="top")
+            ax.set_title(title)
+
+            if split_before.any():
+                # Split between the anchor and the block.
+                ax.axvline((t[a] + t[a + 1]) / 2, color=CUT_COLOR, linewidth=1)
+            else:
+                k = a + 1 + np.argmax(keep[a + 1:])  # the first fix kept after the anchor
+                ax.plot(t[k], x[k], "o", markerfacecolor="none", markeredgecolor=BAR, markersize=7)
+
+        axes[0].set_ylabel("position (m)")
+        axes[0].set_ylim(-30, 600)
+        for ax in axes:
+            ax.set_xlim(t[0] - 1, t[-1] + 1)
+        write(fig, "excursion-real-flight.pdf")
+
+
 def excursion_table(roots: dict, excursion: dict) -> None:
     """Body of the excursion table: one row per window and, for each discipline, the share
     of flights split at least once and the share of fixes deleted."""
@@ -225,6 +336,10 @@ def main() -> None:
     thresholds = yaml.safe_load((REPO / "configs" / "preprocessing.yaml").read_text(encoding="utf-8"))
     roots = {d: Path(config[d]["root"]) for d in LABEL}
     OUT.mkdir(parents=True, exist_ok=True)
+
+    # Drawn from synthetic tracks: need no data.
+    excursion_rule_figure(thresholds["excursion"]["window_s"])
+    real_flight_figure(thresholds["excursion"]["window_s"])
 
     # Each figure or table is redrawn only if its results are in both data folders: without
     # the disk, or before a run, the committed file stays.

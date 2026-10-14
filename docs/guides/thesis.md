@@ -43,6 +43,8 @@ compiles on a machine without the data folder.
 | `tex/preprocessing-excursion.tex` | `preprocessing.py` | the flights split and the fixes deleted by the excursion rule with W, half W and twice W | `chapters/preprocessing.tex` |
 | `figures/preprocessing/median-speed*.pdf` | `preprocessing.py` | the median speed of every flight, by discipline and by wing class | `chapters/preprocessing.tex` |
 | `figures/preprocessing/top-speed.pdf` | `preprocessing.py` | the speed of steps and over windows, by wing class | `chapters/preprocessing.tex` |
+| `figures/preprocessing/excursion-rule.pdf` | `preprocessing.py` | the excursion rule on two synthetic tracks; drawn without the data folder | `chapters/preprocessing.tex` |
+| `figures/preprocessing/excursion-real-flight.pdf` | `preprocessing.py` | real flight faster than the top speed, split or not; drawn without the data folder | `chapters/preprocessing.tex` |
 
 The macro files are read in the preamble of `main.tex`, so every chapter can use them.
 A table file holds only the `tabular`: its caption and label stay in the chapter.
