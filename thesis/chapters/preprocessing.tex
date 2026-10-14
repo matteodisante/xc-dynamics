@@ -159,10 +159,13 @@ and~2. Flights of any other class are not shown.}
 \section{Horizontal excursions}
 \label{sec:excursions}
 
-A step faster than any glider of the discipline can fly is a recorder error. The
-excursion rule uses a top speed $v_{\max}$, read off the data at the end of this section,
-to delete the fixes such steps lead to, or to split the flight where the track does not
-come back.
+A step whose speed $v_i$, Equation~\eqref{eq:step-speed}, exceeds what any glider of the
+discipline can fly is a recorder error, but the step alone does not say what went wrong.
+Either the track has left its path and comes back to it, as in a spike, or it goes on
+from the new position, as in a jump. The excursion rule tells the two apart by looking
+ahead: it deletes the fixes of an excursion that comes back within a time $W$, and splits
+the flight where the track does not come back. It has two parameters: the top speed
+$v_{\max}$, read off the data, and $W$, set by hand and tested at the end of the section.
 
 The rule scans the fixes left by the previous steps in order, against an anchor $a$, the
 last fix accepted. Fix $j$ is reachable from the anchor if
@@ -177,50 +180,95 @@ $W=\SI{\cfgExcursionWindowS}{\second}$ of the opening, $t_k-t_j\leq W$. If there
 the track went out and came back: fixes $j$ to $k-1$ are deleted and $k$ becomes the
 anchor. If there is none, the track does not come back: the flight is split between the
 anchor and fix $j$, and a new segment starts from $j$. A block still open at the end of
-the track is deleted.
+the track is deleted. The rule thus leaves the fixes it accepted and the places where the
+flight is split, which a later step uses as the boundaries of its segments.
+Figure~\ref{fig:excursion-rule} shows both cases.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{generated/figures/preprocessing/excursion-rule}
+\caption{The excursion rule on two synthetic tracks along one coordinate, one fix per
+second, with a top speed lowered for legibility. Grey dots: fixes kept. Blue dot: the
+anchor, the last fix accepted before the block. Shaded area: the positions $x$ reachable
+from the anchor, $|x-x_a|\leq v_{\max}(t-t_a)$, Equation~\eqref{eq:reachable} along one
+coordinate. (a) Three fixes leave the cone and the next one comes back within $W$: the
+three are deleted (crosses). (b) The track jumps and stays there: no fix comes back
+within $W=\SI{\cfgExcursionWindowS}{\second}$ of the opening of the block (grey band),
+so the flight is split (vertical line) and a new segment starts from the block.}
+\label{fig:excursion-rule}
+\end{figure}
 
 The first anchor of each segment, at the start of the track or after a split, is the
 first fix whose step to the next fix satisfies Equation~\eqref{eq:reachable}; the fixes
-before it are deleted. An anchor in the wrong place would make every good fix after it
-unreachable, while a wrong fix agrees with neither of its neighbours and so never
-becomes an anchor. The price is that a good fix followed by a spike is deleted with it.
-The rule leaves the fixes it accepted and the places where the flight is split, which a
-later step uses as the boundaries of its segments.
+before it are deleted. An anchor off the track would make the good fixes after it
+unreachable, while an isolated wrong fix disagrees with both its neighbours and so is
+never chosen. The price is that a good fix followed by a spike is deleted with it.
 
-The step speed of Equation~\eqref{eq:step-speed} mixes real flight with recorder
-errors, whose steps can be arbitrarily fast. Over a window of length $W$ the speed from
-fix $i$ is
+The top speed must lie above the speed of real flight, and the rule tells which speed of
+real flight matters. Suppose a stretch of real flight is faster than $v_{\max}$: the fix
+that ends its first fast step opens a block, after an anchor $a$ that is itself on the
+track. Over a window of length $W$, the speed from fix $i$ is
 \begin{equation}
-  u_i=\frac{d(i,j)}{t_j-t_i},\qquad j=\min\{k:\ t_k-t_i\geq W\},
+  u_i=\frac{d(i,\ell)}{t_\ell-t_i},\qquad \ell=\min\{k:\ t_k-t_i\geq W\},
   \label{eq:window-speed}
 \end{equation}
-with $d(i,j)$ as in Equation~\eqref{eq:reachable}. Across a gap the window is longer than
-$W$. A single fix displaced by a distance $D$
-changes $u_i$ by at most $D/W$, against $D/\Delta t$ for the two steps that touch it, so
-the window speed follows real flight much further than the step speed
-(Figure~\ref{fig:top-speed}, lower row). Both distributions fall steeply; the step speed
-then turns into a long tail of errors, the window speed only later and much lower.
+with $d$ as in Equation~\eqref{eq:reachable}. For $i=a$ the window covers real flight,
+and unless it spans a gap, its last fix $\ell$ comes within $W$ of the opening of the
+block. That fix is reachable from the anchor if $u_a\leq v_{\max}$. A top speed above
+every window speed of real flight therefore never splits real flight: a stretch of real
+flight faster than $v_{\max}$ can lose its fixes, but the rule finds a reachable fix in
+time (Figure~\ref{fig:excursion-real-flight}).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{generated/figures/preprocessing/excursion-real-flight}
+\caption{Real flight faster than the top speed, on synthetic tracks drawn as in
+Figure~\ref{fig:excursion-rule}. A burst of fast steps opens a block after the anchor
+$a$; grey band: the time $W$ the rule waits for a reachable fix. Dashed line: from the
+anchor to fix $\ell$, the end of the window of length $W$ from the anchor,
+Equation~\eqref{eq:window-speed}; its slope is the window speed $u_a$. (a) A short
+burst: $u_a\leq v_{\max}$, so $\ell$ lies in the cone and within the band. The rule finds
+a reachable fix (circle), $\ell$ at the latest, and deletes the fixes before it
+(crosses), but does not split the flight. (b) A burst that lasts most of the window:
+$u_a>v_{\max}$, no fix is reachable within $W$, and the rule splits real flight
+(vertical line). The fast fixes are deleted too, because the new segment starts at the
+first fix whose step to the next is reachable.}
+\label{fig:excursion-real-flight}
+\end{figure}
+
+Computed from every fix, the window speed also follows real flight much further than the
+step speed. A single fix displaced by a distance $D$ changes $u_i$ by at most $D/W$,
+against $D/\Delta t$ for the two steps that touch it. Both distributions fall steeply
+(Figure~\ref{fig:top-speed}, lower row); the step speed then turns into a long tail of
+errors, the window speed only later and much lower.
 
 The window speed still carries errors that last longer than $W$, such as a jump that
 never comes back. Split by wing class (Figure~\ref{fig:top-speed}, upper row), real
 flight depends on the wing: each class falls off in the order of its performance. The
 errors do not depend on the wing, and beyond the fall-off the curves of all classes
 merge into one common tail. Real flight therefore ends where the fastest class reaches
-that tail. We set $v_{\max}$ there for paragliders,
-\SI[per-mode=symbol]{\cfgSpeedMaxKmhPara}{\kilo\metre\per\hour}, and with a margin above
-the end of the rigid Class~2 curve for hang gliders,
-\SI[per-mode=symbol]{\cfgSpeedMaxKmhHang}{\kilo\metre\per\hour}.
+that tail. We set $v_{\max}$ there:
+\SI[per-mode=symbol]{\cfgSpeedMaxKmhPara}{\kilo\metre\per\hour} for paragliders and
+\SI[per-mode=symbol]{\cfgSpeedMaxKmhHang}{\kilo\metre\per\hour} for hang gliders.
 
-The window lasts as long as the time the excursion rule waits for a track to come
-back. The rule splits a flight only where the mean speed from the last accepted fix
-stays above $v_{\max}$ for $W$, so a threshold above every real window speed never
-splits real flight.
+To see how much the output depends on $W$, the rule was run on every flight kept by the
+previous steps with $W$ halved and doubled, \SI{\cfgExcursionWindowShortS}{\second} and
+\SI{\cfgExcursionWindowLongS}{\second}, and $v_{\max}$ unchanged
+(Table~\ref{tab:excursion-windows}). The share of fixes deleted barely changes, so almost
+every excursion that comes back does so within the shortest window. The rule splits the
+flight at every excursion that does not come back within $W$, so a shorter $W$ splits
+more flights: the share of flights split roughly doubles when $W$ is halved and halves
+when it is doubled, and stays a small fraction of the flights for every window. Any $W$
+also treats as a return a jump shorter than about $v_{\max}W$ after which the track stays
+where it landed, and deletes the fixes in between, so a longer $W$ bridges larger jumps.
+Across this range the choice affects few flights, and we keep the middle value, which
+balances splits against bridged jumps.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{generated/figures/preprocessing/top-speed}
 \caption{Ground speed in the flights kept by the previous steps. Upper row: speed over
-windows of \SI{\cfgExcursionWindowS}{\second}, Equation~\eqref{eq:window-speed}, for
+windows of length $W=\SI{\cfgExcursionWindowS}{\second}$, Equation~\eqref{eq:window-speed}, for
 four wing classes of each discipline (Section~\ref{sec:glider}). Lower row, all classes
 together: speed of single steps, Equation~\eqref{eq:step-speed}, and over windows. Each
 curve is the share of its values per km/h, in bins of 5~km/h, on a logarithmic axis;
