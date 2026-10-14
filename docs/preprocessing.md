@@ -88,6 +88,12 @@ things:
   `speed.max_kmh` for W seconds, so a threshold above every real window speed never
   splits real flight.
 
+W itself, `excursion.window_s`, is not read off data. To show how
+much the rule depends on it, `scripts/preprocessing/excursion_counts.py` runs the rule on
+every flight with W, with `excursion.window_short_s` (half W) and with
+`excursion.window_long_s` (twice W), and counts the fixes deleted and the splits; the
+thesis compares the three in a table. No step uses the other two windows.
+
 ## Adding a step
 
 1. Write the function in `src/xc_dynamics/preprocessing/` and its test in
