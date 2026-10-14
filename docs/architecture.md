@@ -1,8 +1,8 @@
 # Architecture
 
 The repository has two halves. The **analysis** turns the FFVL archive into data and
-results saved on disk. The **thesis** reads what was saved and turns it into the numbers
-and tables of the PDF. Data flows one way, from the analysis to the thesis.
+results saved on disk. The **thesis** reads what was saved and turns it into the numbers,
+tables and figures of the PDF. Data flows one way, from the analysis to the thesis.
 
 ```mermaid
 flowchart LR
@@ -66,7 +66,8 @@ script's docstring says what it is for and how to run it.
 - `scripts/`: the scripts that write those macros and figures. `config.py` turns the
   thresholds into macros; each chapter that quotes data has its own script, named like
   the chapter (`dataset.py`, `preprocessing.py`). They read what the analysis saved and
-  never run it: at most they count, take percentages and draw.
+  never run it: at most they count, take percentages and draw. The diagrams of a rule
+  are the exception: they run the rule itself on synthetic tracks, so they need no data.
 - `generated/`: what these scripts write, `.tex` files in `tex/` and figures in
   `figures/<chapter>/`, read by `main.tex` and the chapters. They are never edited by
   hand. They are committed, so the thesis compiles on a machine without the data folder.

@@ -21,7 +21,7 @@ configs/            settings, one file per area: data folders, pre-processing th
 tests/              same structure as src/
 docs/               this documentation
 thesis/             the thesis, in LaTeX; build.sh compiles it
-thesis/scripts/     write the numbers the text quotes, from saved results
+thesis/scripts/     write the numbers and figures of the text, from saved results
 thesis/generated/   what they write: macros and tables in tex/, figures in figures/
 ```
 

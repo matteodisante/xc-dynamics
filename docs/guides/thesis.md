@@ -14,7 +14,7 @@ The script runs, from `thesis/`:
 4. `latexmk -pdf main.tex`.
 
 Without the data folder, steps 2 and 3 print a warning and leave the committed files as
-they are.
+they are; only the diagrams drawn from synthetic tracks are redrawn.
 
 !!! note "The analysis is not rerun"
     `build.sh` only reads what is saved. Changing a threshold changes the value printed

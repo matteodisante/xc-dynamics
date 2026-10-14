@@ -1,6 +1,7 @@
-"""Figures of the pre-processing chapter, drawn from the results saved in the data folder
-of both disciplines, in thesis/generated/figures/preprocessing/. Each figure marks its
-threshold from configs/preprocessing.yaml.
+"""Figures and table of the pre-processing chapter, figures in
+thesis/generated/figures/preprocessing/. Most come from the results saved in the data
+folder of both disciplines, and a figure marks its threshold from
+configs/preprocessing.yaml; the diagrams of the excursion rule come from synthetic tracks.
 
 From derived/preprocessing/speed/flights.csv (scripts/preprocessing/flight_speeds.py) and
 the catalog, the median step speed of every flight, for speed.median_max_kmh:

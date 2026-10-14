@@ -64,6 +64,11 @@ the tests in `tests/preprocessing/`, the thresholds in `configs/preprocessing.ya
 Steps 5 and 6 divide by the time between fixes, so they need the times the clock rule
 leaves: strictly increasing.
 
+Before any step, `before_excursions` also records in the row of each flight the sampling
+interval of the track as read
+([`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval]), shown in
+the dataset chapter. It is a measure: no step uses it.
+
 ## Thresholds
 
 Every threshold is a key of `configs/preprocessing.yaml`; a function receives it as an
@@ -82,17 +87,17 @@ things:
   `scripts/preprocessing/speed_histograms.py`, which count the speed of every step and
   the speed over every window of `excursion.window_s` seconds
   ([`window_speed`][xc_dynamics.preprocessing.speed.window_speed]). A single wrong fix
-  barely moves the speed over a window, so its histogram shows real flight alone, and
-  `speed.max_kmh` is where it ends. The window lasts W, the time the excursion rule waits
-  before it splits a flight: the rule splits only if the mean speed stays above
-  `speed.max_kmh` for W seconds, so a threshold above every real window speed never
-  splits real flight.
+  barely moves the speed over a window, so its histogram follows real flight much
+  further than that of the steps, and `speed.max_kmh` is where real flight ends. The
+  window lasts W, the time the rule waits for a track to come back, so the window from
+  the last accepted fix ends within the wait: a threshold above every real window speed
+  never splits real flight (thesis, section Horizontal excursions).
 
-W itself, `excursion.window_s`, is not read off data. To show how
-much the rule depends on it, `scripts/preprocessing/excursion_counts.py` runs the rule on
-every flight with W, with `excursion.window_short_s` (half W) and with
-`excursion.window_long_s` (twice W), and counts the fixes deleted and the splits; the
-thesis compares the three in a table. No step uses the other two windows.
+W itself, `excursion.window_s`, is set by hand. `scripts/preprocessing/excursion_counts.py`
+runs the rule on every flight with W, half W (`excursion.window_short_s`) and twice W
+(`excursion.window_long_s`), and counts the fixes deleted and the splits. The thesis
+shows that the output changes little across the three, and that W leaves recorders
+sampling every 10 s two fixes to come back. No step uses the other two windows.
 
 ## Adding a step
 
