@@ -23,10 +23,10 @@ On the disk `SSD_DATA` (279 GiB, about half used), with the space each part take
 
 ```text
 SSD_DATA/
-├── paragliders/ffvl_cfd_igc/                 data folder, paragliders        367 MB
+├── paragliders/ffvl_cfd_igc/                 data folder, paragliders        369 MB
 │   ├── raw/raw_xml/<year>.xml                flight lists, one per season    170 MB
 │   ├── catalog/catalog.csv                   one row per flight               79 MB
-│   ├── derived/<area>/<result>/              results the thesis reads         36 MB
+│   ├── derived/<area>/<result>/              results the thesis reads         38 MB
 │   └── scratch/<area>/<result>/              trials, same layout, never read   1 MB
 ├── hang_gliders/delta_cfd_igc/               data folder, hang gliders        24 MB
 │   └── ...                                   same layout: lists 9 MB, catalog 3 MB, results 1 MB
@@ -172,9 +172,6 @@ unreadable file gets only `flight_id` and `error`.
 | `excursion_deleted`, `excursion_splits` | fixes it deletes and splits it makes with `excursion.window_s` | | ✓ |
 | `short_deleted`, `short_splits` | the same with `excursion.window_short_s` | | ✓ |
 | `long_deleted`, `long_splits` | the same with `excursion.window_long_s` | | ✓ |
-
-The `speed/flights.csv` now on disk was written on 12 October 2026, before `sampling_s`
-and `speed_ok` existed; a new run of `flight_speeds.py` adds them.
 
 The start of `excursion/flights.csv`. The third flight fails the altitude channel and the
 fourth the fast-track rule, so the cells of the steps they do not reach are empty:
