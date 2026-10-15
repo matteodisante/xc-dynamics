@@ -3,8 +3,72 @@
 
 The pre-processing turns each IGC file into a trajectory fit for analysis. This
 chapter describes its steps in the order they run, one section per step. Some steps
-delete single fixes, and one of them also splits the flight; others judge the whole
-flight and keep or drop it.
+delete single fixes, and the two excursion rules also split the flight; others judge the
+whole flight and keep or drop it. Each step answers one question about the recording:
+\begin{enumerate}
+\item \textbf{Reading the fixes} (Section~\ref{sec:parsing}). Each record of the file
+  becomes a fix with a time, a position and two altitudes, one from the barometer and
+  one from the GNSS receiver. Records that cannot be read are discarded; nothing else is
+  judged.
+\item \textbf{Choice of altitude channel} (Section~\ref{sec:altchannel}). The analysis
+  uses the GNSS altitude, so a flight whose GNSS altitude is mostly missing or never
+  moves is dropped, and in the flights kept the few fixes without it are deleted. The
+  barometer is checked too: when it measures altitude, it serves as an independent
+  witness of real vertical motion.
+\item \textbf{Clock} (Section~\ref{sec:clock}). Time must run forward: a fix that does
+  not come after every fix before it is deleted.
+\item \textbf{Repeated positions} (Section~\ref{sec:repeated}). A recorder that stops
+  updating repeats its last position; the copies are deleted.
+\item \textbf{Fast tracks} (Section~\ref{sec:fasttracks}). A free flight spends part of
+  its time climbing in thermals at a low ground speed, so a track whose typical speed is
+  too high is not a free flight, and is dropped.
+\item \textbf{Horizontal excursions} (Section~\ref{sec:excursions}). A fix the glider
+  could not have reached at its top speed is a recorder error: it is deleted if the track
+  comes back soon after, and otherwise the flight is split where the track jumps.
+\item \textbf{Vertical excursions} (Section~\ref{sec:vertical}). The same rule on the
+  GNSS altitude, with a top vertical speed read off the barometer.
+\end{enumerate}
+What comes out is a set of segments, pieces of the flight that no rule split, with a
+time, a position and an altitude on every fix. Table~\ref{tab:preproc-steps} sums up the
+steps and their thresholds.
+
+\begin{table}[htbp]
+\centering\small
+\caption{The steps of the pre-processing, in the order they run. Where two values are
+given, the first holds for paragliders and the second for hang gliders; the two
+excursion rules share the window $W$.}
+\label{tab:preproc-steps}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.4cm}
+  >{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}p{3.4cm}@{}}
+\toprule
+Section & Judges & Removes & Thresholds \\
+\midrule
+\ref{sec:parsing} Reading the fixes & the layout of each record & records that cannot be
+  read & none \\
+\ref{sec:altchannel} Choice of altitude channel & the GNSS altitude of the flight & the
+  flight; fixes without a GNSS altitude & present on a share
+  $\geq\cfgAltitudeGnssPresentMin$ of the fixes, range
+  $\geq\SI{\cfgAltitudeGnssMinRangeM}{\metre}$ \\
+\ref{sec:clock} Clock & the time of each fix & fixes that do not come after every fix
+  before them & none \\
+\ref{sec:repeated} Repeated positions & the position of each fix & fixes at the
+  position of the fix before & none \\
+\ref{sec:fasttracks} Fast tracks & the median step speed of the flight & the flight &
+  $\tilde v\leq\cfgSpeedMedianMaxKmhPara\,/\,%
+  \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhHang}{\kilo\metre\per\hour}$ \\
+\ref{sec:excursions} Horizontal excursions & the horizontal distance of each fix from
+  the last fix accepted & fixes off the track; the flight is split where the track
+  jumps & $v_{\max}=\cfgSpeedMaxKmhPara\,/\,%
+  \SI[per-mode=symbol]{\cfgSpeedMaxKmhHang}{\kilo\metre\per\hour}$,
+  $W=\SI{\cfgExcursionWindowS}{\second}$ \\
+\ref{sec:vertical} Vertical excursions & the vertical distance of each fix from the
+  last fix accepted & fixes off the track; the flight is split where the track jumps &
+  $v_{z,\max}=\cfgVerticalMaxMsPara\,/\,%
+  \SI[per-mode=symbol]{\cfgVerticalMaxMsHang}{\metre\per\second}$, $W$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \section{Reading the fixes}
 \label{sec:parsing}
@@ -15,7 +79,8 @@ $h_i^{\mathrm{baro}}$ and $h_i^{\mathrm{GNSS}}$. A record that does not follow t
 fixed layout of the format, or whose time of day or position is impossible, is
 discarded. A missing or unreadable altitude,
 including the zero the format uses for a missing reading~\cite{fai_igc_spec}, is marked as missing, and
-the fix keeps its time and position.
+the fix keeps its time and position. A fix without a GNSS altitude is deleted later, by
+the altitude channel (Section~\ref{sec:altchannel}).
 
 Time is measured in seconds from the first fix. Records carry only the time of day,
 so a flight crossing UTC midnight would jump back by a day; a day is added when the
@@ -46,7 +111,10 @@ set of those with a GNSS altitude. The flight is kept only if
 The first condition rejects incomplete channels; the second rejects channels stuck at
 one value, and flights with almost no vertical excursion. Fixes flagged as lacking a
 three-dimensional solution count as present if they carry an altitude. Pressure
-altitude is never substituted for a missing GNSS value.
+altitude is never substituted for a missing GNSS value. In a flight kept, the fixes
+without a GNSS altitude are deleted, so every later step sees a time, a position and an
+altitude on every fix; by the first condition, this deletes at most a share
+$1-\cfgAltitudeGnssPresentMin$ of the fixes of a flight.
 
 The barometer is checked with the same two conditions on $h^{\mathrm{baro}}$, with
 thresholds \cfgAltitudeBaroWitnessPresentMin\ and
@@ -62,15 +130,16 @@ departs from true altitude by a few percent when the temperature departs from th
 standard atmosphere, so a barometer that measures altitude passes; some recorders write
 a raw pressure reading or feet in this field, and fail. A flight whose barometer passes
 the three conditions is a witness: its pressure altitude, measured independently of the
-GNSS, serves only to choose the top vertical speed of the vertical excursion rule
-(Section~\ref{sec:vertical}), and never decides whether the flight is kept.
+GNSS, serves only to choose and to check the top vertical speed of the vertical
+excursion rule (Section~\ref{sec:vertical}), and never decides whether the flight is
+kept.
 
 \section{Clock}
 \label{sec:clock}
 
 A recorder can write a time equal to or earlier than the one before it. On the fixes
-as read, the clock rule keeps the first fix, and fix $i$ only if its time is later
-than that of every fix before it,
+left by the altitude channel, in order, the clock rule keeps the first fix, and fix $i$
+only if its time is later than that of every fix before it,
 \begin{equation}
   t_i>\max_{j<i}t_j.
   \label{eq:clock}
@@ -101,7 +170,7 @@ the typical speed of its track stays well below the top speed of the wing. A tra
 with a higher typical speed comes from something else, such as a powered aircraft or a
 file with compressed times, and the whole flight is dropped.
 
-Let $n$ be the number of fixes left by the two previous rules. Between fix $i$ and
+Let $n$ be the number of fixes left by the previous steps. Between fix $i$ and
 fix $i+1$ the horizontal distance is taken on a sphere of radius
 $R=\SI{6371}{\kilo\metre}$, with the haversine formula
 \begin{equation}
@@ -125,7 +194,7 @@ paragliders and
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhHang}{\kilo\metre\per\hour} for hang
 gliders. A flight with fewer than two fixes has no step and is kept. The rule deletes
 no fix, and the median is not moved by a few wrong steps, such as a position spike:
-those are left to the excursion rule (Section~\ref{sec:excursions}).
+those are left to the horizontal excursion rule (Section~\ref{sec:excursions}).
 
 The thresholds were read off the distribution of $\tilde v$ over all flights
 (Figure~\ref{fig:median-speed}). In both disciplines the bulk of the distribution ends
@@ -139,8 +208,7 @@ Class~2 wings.
 \centering
 \includegraphics[width=\textwidth]{generated/figures/preprocessing/median-speed}
 \caption{Median step speed $\tilde v$ (Equation~\eqref{eq:median-speed}) of every
-flight past the altitude channel, computed after the clock and repeated-position
-rules. Bins of 2~km/h, logarithmic vertical axis; flights above 200~km/h fall in the
+flight past the altitude channel, computed on the fixes left by the previous steps. Bins of 2~km/h, logarithmic vertical axis; flights above 200~km/h fall in the
 last bin. Dashed line: threshold,
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhPara}{\kilo\metre\per\hour} for
 paragliders and
@@ -192,7 +260,8 @@ the track went out and came back: fixes $j$ to $k-1$ are deleted and $k$ becomes
 anchor. If there is none, the track does not come back: the flight is split between the
 anchor and fix $j$, and a new segment starts from $j$. A block still open at the end of
 the track is deleted. The rule thus leaves the fixes it accepted and the places where the
-flight is split, which a later step uses as the boundaries of its segments.
+flight is split, the boundaries of its segments, inside which the vertical rule runs
+(Section~\ref{sec:vertical}).
 Figure~\ref{fig:excursion-rule} shows both cases.
 
 \begin{figure}[htbp]
@@ -303,18 +372,84 @@ that it deletes.}
 
 \section{Vertical excursions}
 \label{sec:vertical}
-\textcolor{red}{To be written.}
+
+The GNSS altitude has errors of its own: it can spike or jump while the position follows
+the track. The rule of Section~\ref{sec:excursions} cannot see them, since it judges
+positions only, so the same rule runs a second time, on the altitude $z$. In analogy with
+Equation~\eqref{eq:reachable}, fix $j$ is reachable from the anchor $a$ if
+\begin{equation}
+  |z_j-z_a|\leq v_{z,\max}\,(t_j-t_a),
+  \label{eq:reachable-vertical}
+\end{equation}
+with $v_{z,\max}$ the top vertical speed of the discipline. The rest is as in
+Section~\ref{sec:excursions}: a block that comes back within $W$ is deleted, a jump that
+does not come back splits the flight, and each segment starts at the first fix whose step
+to the next is reachable. The window is the same, $W=\SI{\cfgExcursionWindowS}{\second}$,
+since the reason for keeping it, two fixes for the slowest recorders to come back, holds
+for any coordinate. The rule runs inside each segment left by the horizontal rule,
+because across a split the two altitudes belong to different pieces of the track. Its
+splits add to those of the horizontal rule, and the flight ends up divided into one
+sequence of segments, whichever rule made each split.
+
+The rule deletes whole fixes, positions included. This is a choice: after the
+pre-processing every fix carries a time, a position and an altitude, as the altitude
+channel already ensures for the fixes without a GNSS altitude
+(Section~\ref{sec:altchannel}), and the rule deletes few fixes
+(Table~\ref{tab:vertical-excursions}). Deleting fixes keeps the result of the horizontal
+rule: two consecutive steps that are horizontally reachable join into one that is
+reachable too, by the triangle inequality.
+
+The argument given for $v_{\max}$ in Section~\ref{sec:excursions} holds here as well: a
+top vertical speed above every vertical speed of real flight over a window of length $W$
+never splits a real descent, however steep. In analogy with
+Equations~\eqref{eq:step-speed} and~\eqref{eq:window-speed}, the vertical speed of the
+step from fix $i$ and over the window from fix $i$ are
+\begin{equation}
+  w_i=\frac{|z_{i+1}-z_i|}{t_{i+1}-t_i},
+  \qquad
+  \bar w_i=\frac{|z_\ell-z_i|}{t_\ell-t_i},
+  \label{eq:vertical-speed}
+\end{equation}
+with $\ell$ as in Equation~\eqref{eq:window-speed}, both inside one segment. For
+$v_{\max}$ the wing classes told real flight from errors. For $v_{z,\max}$ we have more:
+in most flights the barometer measures the same motion independently of the GNSS. In the
+flights whose barometer is a witness (Section~\ref{sec:altchannel}), its speeds,
+Equation~\eqref{eq:vertical-speed} with $h^{\mathrm{baro}}$ in place of $z$, show real
+vertical motion without the errors of the GNSS, and we read $v_{z,\max}$ off them
+(Figure~\ref{fig:vertical-speed}). Both channels are taken on the same steps and windows,
+those where both altitudes are known.
+
+Over windows, the barometer falls steeply, in the same way for every wing class
+(Figure~\ref{fig:vertical-speed}, upper row), and then flattens into a floor. In the lower
+row, the GNSS speed over windows lies above that of the barometer while both fall, since
+the GNSS adds its own errors; beyond the fall the two merge into one floor. That floor
+reaches speeds no glider sustains over $W$, and both channels share it, so it holds
+errors common to the two. Real vertical motion therefore ends where the fall of the
+barometer meets the floor, and we set $v_{z,\max}$ there:
+\SI[per-mode=symbol]{\cfgVerticalMaxMsPara}{\metre\per\second} for paragliders and
+\SI[per-mode=symbol]{\cfgVerticalMaxMsHang}{\metre\per\second} for hang gliders. With
+fewer flights, the curves of the hang gliders are noisier and their reading coarser. The
+same threshold judges the flights without a witness, since the vertical speed of real
+flight depends on the wing and on the air, which the recorder does not change.
+
+The barometer also checks the threshold. Run on the pressure altitude of the witness
+flights, the rule deletes far fewer fixes and splits fewer flights than on the GNSS
+altitude (Table~\ref{tab:vertical-excursions}). The pressure altitude carries no GNSS
+errors, so what the rule removes there is real flight or an error the two channels
+share: an upper bound on the real flight the rule removes from the GNSS altitude.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{generated/figures/preprocessing/vertical-speed}
 \caption{Absolute vertical speed in the flights kept by the previous steps whose
-barometer is a witness (Section~\ref{sec:altchannel}). Upper row: speed of the pressure
-altitude over windows of length $W=\SI{\cfgExcursionWindowS}{\second}$, for four wing
-classes of each discipline (Section~\ref{sec:glider}). Lower row, all classes together:
-speed of the GNSS and of the pressure altitude over single steps and over windows. Each
-curve is the share of its values per m/s, in bins of 1~m/s centred on whole values, on a
-logarithmic axis; values beyond the axis count in the share. Dashed line: the top
+barometer is a witness (Section~\ref{sec:altchannel}), on the steps and windows where
+both altitudes are known. Upper row: speed of the pressure altitude over windows of
+length $W=\SI{\cfgExcursionWindowS}{\second}$, $\bar w_i$ of
+Equation~\eqref{eq:vertical-speed}, for four wing classes of each discipline
+(Section~\ref{sec:glider}). Lower row, all classes together: speed of the GNSS and of the
+pressure altitude over single steps, $w_i$, and over windows. Each curve is the share of
+its values per m/s, in bins of 1~m/s centred on whole values (the first, from 0, half as
+wide), on a logarithmic axis; values beyond the axis count in the share. Dashed line: the top
 vertical speed $v_{z,\max}$, \SI[per-mode=symbol]{\cfgVerticalMaxMsPara}{\metre\per\second}
 for paragliders and \SI[per-mode=symbol]{\cfgVerticalMaxMsHang}{\metre\per\second} for
 hang gliders.}
