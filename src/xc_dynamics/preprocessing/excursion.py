@@ -11,9 +11,9 @@ from the block. A block still open at the end of the track is deleted.
 The first anchor of each segment is the first fix whose step to the next fix is
 reachable, and the fixes before it are deleted, so a wrong fix never becomes an anchor.
 
-The scan judges one coordinate through its distance: excursions applies it to the
-horizontal position, vertical_excursions to the GNSS altitude inside each segment that
-the horizontal scan left.
+The scan judges one coordinate through its distance: horizontal_excursions applies it to
+the horizontal position, vertical_excursions to the GNSS altitude inside each segment
+that the horizontal scan left.
 """
 
 from collections.abc import Callable
@@ -88,7 +88,9 @@ def scan(
     return keep, split_before
 
 
-def excursions(fixes: pd.DataFrame, max_kmh: float, window_s: float) -> tuple[np.ndarray, np.ndarray]:
+def horizontal_excursions(
+    fixes: pd.DataFrame, max_kmh: float, window_s: float
+) -> tuple[np.ndarray, np.ndarray]:
     """The scan on the horizontal position, with the distance on the sphere. Two masks over
     the fixes: keep, True for the fixes to keep, and split_before, True on the first fix of
     every segment after the first. The times must be strictly increasing, as the clock rule
@@ -102,7 +104,9 @@ def excursions(fixes: pd.DataFrame, max_kmh: float, window_s: float) -> tuple[np
     return scan(fixes["t"].to_numpy(), distance, max_kmh / 3.6, window_s)  # km/h -> m/s
 
 
-def vertical_excursions(fixes: pd.DataFrame, max_ms: float, window_s: float) -> tuple[np.ndarray, np.ndarray]:
+def vertical_excursions(
+    fixes: pd.DataFrame, max_ms: float, window_s: float
+) -> tuple[np.ndarray, np.ndarray]:
     """The scan on the GNSS altitude, with the vertical distance, inside each segment. Two
     masks over the fixes: keep, True for the fixes to keep, and split_before, True on the
     first fix of every new segment the scan starts. The fixes are those before_vertical

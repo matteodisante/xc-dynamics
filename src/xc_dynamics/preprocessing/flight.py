@@ -10,13 +10,13 @@ import pandas as pd
 
 from xc_dynamics.preprocessing.altitude import altitude_channel, known_altitude
 from xc_dynamics.preprocessing.clean import increasing_time, moving_position
-from xc_dynamics.preprocessing.excursion import excursions, vertical_excursions
+from xc_dynamics.preprocessing.excursion import horizontal_excursions, vertical_excursions
 from xc_dynamics.preprocessing.igc import read_igc
 from xc_dynamics.preprocessing.sampling import sampling_interval
 from xc_dynamics.preprocessing.speed import track_speed
 
 
-def before_excursions(
+def before_horizontal(
     path: str | Path, altitude: dict, median_max_kmh: float
 ) -> tuple[pd.DataFrame, dict]:
     """Run one IGC file through the pre-processing up to the excursion rule, excluded;
@@ -56,19 +56,19 @@ def before_vertical(
 ) -> tuple[pd.DataFrame, dict]:
     """Run one IGC file through the pre-processing up to the vertical excursion rule,
     excluded; return the fixes as that rule receives them, with a column segment that
-    numbers from 0 the pieces the flight was split into, and the row of before_excursions
+    numbers from 0 the pieces the flight was split into, and the row of before_horizontal
     with the fixes deleted and the splits of the horizontal excursion rule.
 
     max_kmh is the top speed of the discipline and window_s the window W
     (configs/preprocessing.yaml). A flight dropped before the horizontal excursion rule is
-    returned as before_excursions leaves it.
+    returned as before_horizontal leaves it.
     """
-    fixes, row = before_excursions(path, altitude, median_max_kmh)
+    fixes, row = before_horizontal(path, altitude, median_max_kmh)
     if not (row["gnss_ok"] and row["speed_ok"]):
         return fixes, row
-    keep, split_before = excursions(fixes, max_kmh, window_s)
-    row["excursion_deleted"] = int((~keep).sum())
-    row["excursion_splits"] = int(split_before.sum())
+    keep, split_before = horizontal_excursions(fixes, max_kmh, window_s)
+    row["horizontal_deleted"] = int((~keep).sum())
+    row["horizontal_splits"] = int(split_before.sum())
     # Each split starts a new segment: 0 up to the first split, 1 up to the second, ...
     fixes = fixes[keep].assign(segment=split_before[keep].cumsum())
     return fixes, row

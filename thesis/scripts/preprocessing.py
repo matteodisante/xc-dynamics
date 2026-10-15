@@ -48,7 +48,7 @@ import pandas as pd
 import yaml
 
 from xc_dynamics.download import ffvl
-from xc_dynamics.preprocessing.excursion import excursions
+from xc_dynamics.preprocessing.excursion import horizontal_excursions
 from xc_dynamics.preprocessing.speed import EARTH_RADIUS_M
 
 REPO = Path(__file__).resolve().parents[2]
@@ -269,7 +269,7 @@ def draw_rule(ax: plt.Axes, t: np.ndarray, x: np.ndarray, window_s: float) -> tu
     index of the anchor."""
     # The positions as fixes along a meridian, x metres north of 45 N.
     fixes = pd.DataFrame({"t": t, "lat": 45 + x / METRES_PER_DEGREE, "lon": 6.0})
-    keep, split_before = excursions(fixes, 3.6 * SCHEME_MAX_SPEED, window_s)  # m/s -> km/h
+    keep, split_before = horizontal_excursions(fixes, 3.6 * SCHEME_MAX_SPEED, window_s)  # m/s -> km/h
     # The block opens at the first fix deleted or split from the track; the anchor is the
     # fix before it.
     a = np.flatnonzero(~keep | split_before)[0] - 1
@@ -366,13 +366,13 @@ def excursion_table(roots: dict, excursion: dict) -> None:
     # Prefix of the columns in flights.csv -> window in seconds, in the order of the rows.
     windows = {
         "short": excursion["window_short_s"],
-        "excursion": excursion["window_s"],
+        "horizontal": excursion["window_s"],
         "long": excursion["window_long_s"],
     }
-    # Only the flights that went through the rule: the others have no excursion_fixes.
+    # Only the flights that went through the rule: the others have no horizontal_fixes.
     flights = {}
     for d, root in roots.items():
-        flights[d] = pd.read_csv(root / EXCURSION_CSV).dropna(subset=["excursion_fixes"])
+        flights[d] = pd.read_csv(root / EXCURSION_CSV).dropna(subset=["horizontal_fixes"])
 
     header = ""
     for d, f in flights.items():
@@ -390,7 +390,7 @@ def excursion_table(roots: dict, excursion: dict) -> None:
         row = f"{window_s:g}"
         for f in flights.values():
             split = 100 * f[f"{prefix}_splits"].gt(0).mean()
-            deleted = 100 * f[f"{prefix}_deleted"].sum() / f.excursion_fixes.sum()
+            deleted = 100 * f[f"{prefix}_deleted"].sum() / f.horizontal_fixes.sum()
             row += f" & {split:.2f} & {deleted:.3f}"
         lines.append(row + " \\\\\n")
     lines += ["\\bottomrule\n", "\\end{tabular}\n"]

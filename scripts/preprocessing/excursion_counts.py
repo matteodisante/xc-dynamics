@@ -3,7 +3,7 @@ W, to see how much the splits depend on W (excursion.window_s, excursion.window_
 excursion.window_long_s).
 
 Each flight with a track goes through the pre-processing up to the excursion rule
-(before_excursions), whose row also holds the sampling interval of the track as read. A
+(before_horizontal), whose row also holds the sampling interval of the track as read. A
 flight kept by the altitude channel and the speed rule then goes through the excursion
 rule three times, once with each window, on the same fixes.
 
@@ -28,8 +28,8 @@ from tqdm import tqdm
 
 from xc_dynamics.common.provenance import now, run_record
 from xc_dynamics.download import ffvl
-from xc_dynamics.preprocessing.excursion import excursions
-from xc_dynamics.preprocessing.flight import before_excursions
+from xc_dynamics.preprocessing.excursion import horizontal_excursions
+from xc_dynamics.preprocessing.flight import before_horizontal
 
 REPO = Path(__file__).resolve().parents[2]
 CONFIGS = REPO / "configs"
@@ -48,20 +48,20 @@ def one_flight(
     """The counters of the steps of one flight, and the fixes deleted and the splits of the
     excursion rule with each window."""
     try:
-        fixes, row = before_excursions(tracks / local_path, altitude, median_max_kmh)
+        fixes, row = before_horizontal(tracks / local_path, altitude, median_max_kmh)
     except Exception as err:  # one broken file must not stop a run over the whole archive
         return {"error": f"{type(err).__name__}: {err}"}
     if not (row["gnss_ok"] and row["speed_ok"]):  # a flight dropped by the pre-processing
         return row
-    row["excursion_fixes"] = len(fixes)  # the fixes the excursion rule receives
-    keep, split_before = excursions(fixes, max_kmh, window_s)
-    row["excursion_deleted"] = int((~keep).sum())
-    row["excursion_splits"] = int(split_before.sum())
+    row["horizontal_fixes"] = len(fixes)  # the fixes the excursion rule receives
+    keep, split_before = horizontal_excursions(fixes, max_kmh, window_s)
+    row["horizontal_deleted"] = int((~keep).sum())
+    row["horizontal_splits"] = int(split_before.sum())
     # The same rule with half W and with twice W, only to compare.
-    keep, split_before = excursions(fixes, max_kmh, window_short_s)
+    keep, split_before = horizontal_excursions(fixes, max_kmh, window_short_s)
     row["short_deleted"] = int((~keep).sum())
     row["short_splits"] = int(split_before.sum())
-    keep, split_before = excursions(fixes, max_kmh, window_long_s)
+    keep, split_before = horizontal_excursions(fixes, max_kmh, window_long_s)
     row["long_deleted"] = int((~keep).sum())
     row["long_splits"] = int(split_before.sum())
     return row
@@ -116,8 +116,8 @@ def main() -> None:
     result.insert(0, "flight_id", flights.flight_id.to_numpy())
     # Counts stay whole numbers: Int64 allows the empty cells of flights stopped early.
     counts = [
-        "fixes_read", "altitude_deleted", "clock_deleted", "repeated_deleted", "excursion_fixes",
-        "excursion_deleted", "excursion_splits",
+        "fixes_read", "altitude_deleted", "clock_deleted", "repeated_deleted", "horizontal_fixes",
+        "horizontal_deleted", "horizontal_splits",
         "short_deleted", "short_splits", "long_deleted", "long_splits",
     ]
     result[counts] = result[counts].astype("Int64")
@@ -128,9 +128,9 @@ def main() -> None:
     result.to_csv(out / "flights.csv", index=False)
 
     errors = int(result["error"].notna().sum()) if "error" in result else 0
-    judged = int(result.excursion_fixes.notna().sum())
+    judged = int(result.horizontal_fixes.notna().sum())
     # Flights split at least once, with each window.
-    split = int(result.excursion_splits.gt(0).sum())
+    split = int(result.horizontal_splits.gt(0).sum())
     split_short = int(result.short_splits.gt(0).sum())
     split_long = int(result.long_splits.gt(0).sum())
     record |= {

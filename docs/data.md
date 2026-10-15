@@ -152,7 +152,7 @@ B 104400 4852956N 00026682W A 00048 00189
 `derived/preprocessing/speed/flights.csv`, written by `flight_speeds.py`, and
 `derived/preprocessing/excursion/flights.csv`, written by `excursion_counts.py`: one row
 per flight with a track, in the order of the catalog. Both start with the columns of
-[`before_excursions`][xc_dynamics.preprocessing.flight.before_excursions], and each adds
+[`before_horizontal`][xc_dynamics.preprocessing.flight.before_horizontal], and each adds
 its own. A cell is empty when the flight stopped before the step that fills it, and an
 unreadable file gets only `flight_id` and `error`.
 
@@ -170,8 +170,8 @@ unreadable file gets only `flight_id` and `error`.
 | `median_kmh` | median step speed, km/h | ✓ | ✓ |
 | `speed_ok` | kept by the fast-track rule | ✓ | ✓ |
 | `steps`, `p90_kmh` | number of steps and 90th percentile of their speed, km/h | ✓ | |
-| `excursion_fixes` | fixes the excursion rule receives | | ✓ |
-| `excursion_deleted`, `excursion_splits` | fixes it deletes and splits it makes with `excursion.window_s` | | ✓ |
+| `horizontal_fixes` | fixes the excursion rule receives | | ✓ |
+| `horizontal_deleted`, `horizontal_splits` | fixes it deletes and splits it makes with `excursion.window_s` | | ✓ |
 | `short_deleted`, `short_splits` | the same with `excursion.window_short_s` | | ✓ |
 | `long_deleted`, `long_splits` | the same with `excursion.window_long_s` | | ✓ |
 
@@ -179,7 +179,7 @@ The start of `excursion/flights.csv`. The third flight fails the altitude channe
 fourth the fast-track rule, so the cells of the steps they do not reach are empty:
 
 ```text
-flight_id,fixes_read,sampling_s,gnss_present,gnss_range_m,baro_present,baro_range_m,gnss_ok,baro_witness,clock_deleted,repeated_deleted,median_kmh,speed_ok,excursion_fixes,excursion_deleted,excursion_splits,short_deleted,short_splits,long_deleted,long_splits
+flight_id,fixes_read,sampling_s,gnss_present,gnss_range_m,baro_present,baro_range_m,gnss_ok,baro_witness,clock_deleted,repeated_deleted,median_kmh,speed_ok,horizontal_fixes,horizontal_deleted,horizontal_splits,short_deleted,short_splits,long_deleted,long_splits
 20123456,2334,5.0,0.987146529562982,3068.0,1.0,2945.0,True,True,0,32,30.006257365323457,True,2302,2,0,2,0,2,0
 20123457,4224,2.0,0.9955018939393939,742.0,0.9992897727272727,716.0,True,True,0,39,22.818768986013033,True,4185,0,0,0,0,0,0
 20123458,425,31.0,0.0,0.0,0.0,0.0,False,False,,,,,,,,,,,

@@ -2,7 +2,7 @@
 of the excursion rule (speed.max_kmh).
 
 Each flight with a track goes through the pre-processing up to the excursion rule
-(before_excursions), so the steps counted are those the rule judges. In the flights kept,
+(before_horizontal), so the steps counted are those the rule judges. In the flights kept,
 the speed of every step and the speed over every window of excursion.window_s seconds are
 counted in two histograms, one pair per wing class.
 
@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 from xc_dynamics.common.provenance import now, run_record
 from xc_dynamics.download import ffvl
-from xc_dynamics.preprocessing.flight import before_excursions
+from xc_dynamics.preprocessing.flight import before_horizontal
 from xc_dynamics.preprocessing.speed import step_speed, window_speed
 
 REPO = Path(__file__).resolve().parents[2]
@@ -49,7 +49,7 @@ def counts(
     counted = unreadable = 0
     for path in paths:
         try:
-            fixes, row = before_excursions(tracks / path, altitude, median_max_kmh)
+            fixes, row = before_horizontal(tracks / path, altitude, median_max_kmh)
         except Exception:  # one broken file must not stop a run over the whole archive
             unreadable += 1
             continue

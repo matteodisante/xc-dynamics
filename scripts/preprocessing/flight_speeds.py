@@ -2,7 +2,7 @@
 (speed.median_max_kmh).
 
 Each flight with a track goes through the pre-processing up to the excursion rule
-(before_excursions); then the median and 90th percentile of its step speed are computed.
+(before_horizontal); then the median and 90th percentile of its step speed are computed.
 The speed rule deletes no fix, so these are the fixes whose median it judges.
 
     uv run python scripts/preprocessing/flight_speeds.py para
@@ -25,7 +25,7 @@ import yaml
 from tqdm import tqdm
 
 from xc_dynamics.download import ffvl
-from xc_dynamics.preprocessing.flight import before_excursions
+from xc_dynamics.preprocessing.flight import before_horizontal
 from xc_dynamics.preprocessing.speed import speed_summary
 from xc_dynamics.common.provenance import now, run_record
 
@@ -36,7 +36,7 @@ CONFIGS = REPO / "configs"
 def one_flight(local_path: str, tracks: Path, altitude: dict, median_max_kmh: float) -> dict:
     """The counters of the steps and the speed summary of one flight."""
     try:
-        fixes, row = before_excursions(tracks / local_path, altitude, median_max_kmh)
+        fixes, row = before_horizontal(tracks / local_path, altitude, median_max_kmh)
     except Exception as err:  # one broken file must not stop a run over the whole archive
         return {"error": f"{type(err).__name__}: {err}"}
     if row["gnss_ok"]:  # a flight dropped by the altitude channel gets no speeds
