@@ -69,6 +69,12 @@ interval of the track as read
 ([`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval]), shown in
 the dataset chapter. It is a measure: no step uses it.
 
+The excursion rules need thresholds chosen on the fixes they receive, so `flight.py` runs
+a flight through the steps before each rule:
+[`before_excursions`][xc_dynamics.preprocessing.flight.before_excursions] stops before
+step 6, [`before_vertical`][xc_dynamics.preprocessing.flight.before_vertical] after it,
+and numbers in a column `segment` the pieces step 6 split the flight into.
+
 ## Thresholds
 
 Every threshold is a key of `configs/preprocessing.yaml`; a function receives it as an

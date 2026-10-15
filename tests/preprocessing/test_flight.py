@@ -1,4 +1,4 @@
-from xc_dynamics.preprocessing.flight import before_excursions
+from xc_dynamics.preprocessing.flight import before_excursions, before_vertical
 
 ALTITUDE = dict(
     gnss_present_min=0.95,
@@ -53,3 +53,14 @@ def test_speed_rule_flags_a_fast_track_and_deletes_no_fix(tmp_path):
     fixes, row = before_excursions(fast, ALTITUDE, MEDIAN_MAX_KMH)
     assert not row["speed_ok"]
     assert len(fixes) == 3
+
+
+def test_horizontal_excursions_delete_a_spike_and_split_at_a_jump(tmp_path):
+    # Steps of 5 thousandths of a minute, about 33 km/h; the fix at 3 s is a spike that
+    # comes back at 4 s, the track jumps at 6 s and stays there longer than the window.
+    lats = [30000, 30005, 30010, 31000, 30020, 30025, 40000, 40005, 40010, 40015, 40020]
+    path = write(tmp_path, *(b(s, lat, 1000 + 10 * s) for s, lat in enumerate(lats)))
+    fixes, row = before_vertical(path, ALTITUDE, MEDIAN_MAX_KMH, max_kmh=100.0, window_s=3.0)
+    assert list(fixes.t) == [0, 1, 2, 4, 5, 6, 7, 8, 9, 10]
+    assert list(fixes.segment) == [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+    assert (row["excursion_deleted"], row["excursion_splits"]) == (1, 1)
