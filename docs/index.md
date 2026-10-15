@@ -25,7 +25,12 @@ thesis/scripts/     write the numbers and figures of the text, from saved result
 thesis/generated/   what they write: macros and tables in tex/, figures in figures/
 ```
 
-[Architecture](architecture.md) shows how these parts depend on each other.
+## Where to look
 
-The guides explain how to run each task; the reference describes every function,
-generated from the docstrings in the code.
+- [Architecture](architecture.md): how these parts depend on each other.
+- [Data folder](data.md): every file on disk, who writes it, who reads it, what is inside.
+- [Pre-processing](preprocessing.md): from each step of the thesis chapter to its code
+  and thresholds.
+- Guides: [downloading the data](guides/download.md),
+  [building the thesis](guides/thesis.md), [running on another machine](guides/other-machine.md).
+- [Reference](reference/download.md): every function, from the docstrings in the code.

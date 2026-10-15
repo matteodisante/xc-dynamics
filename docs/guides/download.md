@@ -47,30 +47,12 @@ These options override the settings for a single run:
     To update a season, usually the current one, delete its list and run the script again.
     Any list found in `raw/raw_xml/` is used, including one saved by hand from a browser.
 
-## Data folder
+## Output
 
-```text
-raw/raw_xml/2024.xml                       flight list of the season
-catalog/catalog.csv                        one row per flight
-```
-
-The tracks are in the tracks folder:
-
-```text
-raw/igc/2024-2025/{date}_{flight_id}.igc   one track per flight
-```
-
-The two folders can be the same. Here they are not: the tracks are read from the
-data folder of the [XC Thermal Viewer](https://github.com/matteodisante/xc-thermal-viewer),
-so the archive is not stored twice.
-
-Every file of the two folders, with the scripts that read it, is listed in
-[Data folder](../data.md).
-
-The `flight_id` in a track's name leads back to the flight's page,
-`https://parapente.ffvl.fr/cfd/liste/vol/{flight_id}` (or `delta.ffvl.fr`).
-
-## Catalog
-
-One row per flight in the saved lists. Its columns, with an example row, are described
-in [Data folder](../data.md#catalog).
+The flight lists (`raw/raw_xml/<year>.xml`) and the catalog (`catalog/catalog.csv`, one
+row per flight of the saved lists) go in the data folder, the tracks
+(`raw/igc/<season>/<date>_<flight_id>.igc`) in the tracks folder. The two folders can be
+the same; here the tracks folder is the data folder of the
+[XC Thermal Viewer](https://github.com/matteodisante/xc-thermal-viewer), so the archive
+is not stored twice.
+Every file, with its columns and an example: [Data folder](../data.md).

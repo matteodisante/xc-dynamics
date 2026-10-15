@@ -37,10 +37,10 @@ SSD_DATA/
                                               tracks folder: 6 716 tracks     2.0 GB
 ```
 
-The tracks hold 65 GB and 1.7 GB of data; they take more on disk because the disk
-allocates space in fixed blocks, and a small file fills its last block only in part. The
-totals of the data folders include a few files of the old repository, and the viewer
-folders hold the viewer's own files: see [Files not used here](#files-not-used-here).
+The tracks hold 65 GB and 1.7 GB of data; they take more on disk because each small file
+fills its last disk block only in part. The data folders also hold a few files of the old
+repository, and the viewer folders the viewer's own files: see
+[Files not used here](#files-not-used-here).
 
 Results are grouped by [area](architecture.md#areas), then named by what they hold.
 
@@ -49,18 +49,14 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | File | Written by | Holds | Read by |
 |---|---|---|---|
 | `raw/raw_xml/<year>.xml` | `scripts/download/download_ffvl.py` | the flight list of a season, as the CFD serves it | `download_ffvl.py` |
-| `catalog/catalog.csv` | `scripts/download/download_ffvl.py` | one row per flight | `flight_speeds.py`, `speed_histograms.py`, `excursion_counts.py`, `vertical_histograms.py`, `vertical_counts.py`, `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
-| `raw/igc/<season>/*.igc` (tracks folder) | `scripts/download/download_ffvl.py` | the track of a flight | `flight_speeds.py`, `speed_histograms.py`, `excursion_counts.py`, `vertical_histograms.py`, `vertical_counts.py`, through the catalog's `local_path` |
-| `derived/preprocessing/speed/flights.csv` | `scripts/preprocessing/flight_speeds.py` | one row per flight: the counters and verdicts of the pre-processing steps, the median and 90th percentile of its step speed | `thesis/scripts/preprocessing.py` |
-| `derived/preprocessing/speed/run.yaml` | `scripts/preprocessing/flight_speeds.py` | the record of the run | you, before the thesis uses the result |
-| `derived/preprocessing/speed_histograms/counts.npz` | `scripts/preprocessing/speed_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per km/h of speed, with the bin edges | `thesis/scripts/preprocessing.py` |
-| `derived/preprocessing/speed_histograms/run.yaml` | `scripts/preprocessing/speed_histograms.py` | the record of the run | you, before the thesis uses the result |
-| `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the sampling interval of the track as read, the counters and verdicts of the steps before the excursion rule, the fixes the rule receives, and the fixes it deletes and the splits it makes with `excursion.window_s`, `excursion.window_short_s` and `excursion.window_long_s` | `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
-| `derived/preprocessing/excursion/run.yaml` | `scripts/preprocessing/excursion_counts.py` | the record of the run | you, before the thesis uses the result |
-| `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per m/s of absolute vertical speed, from the GNSS and from the pressure altitude, in the flights whose barometer is a witness | `thesis/scripts/preprocessing.py` |
-| `derived/preprocessing/vertical_histograms/run.yaml` | `scripts/preprocessing/vertical_histograms.py` | the record of the run | you, before the thesis uses the result |
-| `derived/preprocessing/vertical/flights.csv` | `scripts/preprocessing/vertical_counts.py` | one row per flight: the counters and verdicts of the steps before the vertical excursion rule, the fixes the rule receives, the fixes it deletes and the splits it makes, and the same on the pressure altitude of the witness flights | `thesis/scripts/preprocessing.py` |
-| `derived/preprocessing/vertical/run.yaml` | `scripts/preprocessing/vertical_counts.py` | the record of the run | you, before the thesis uses the result |
+| `catalog/catalog.csv` | `scripts/download/download_ffvl.py` | one row per flight | every script of `scripts/preprocessing/`, `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
+| `raw/igc/<season>/*.igc` (tracks folder) | `scripts/download/download_ffvl.py` | the track of a flight | every script of `scripts/preprocessing/`, through the catalog's `local_path` |
+| `derived/preprocessing/speed/flights.csv` | `scripts/preprocessing/flight_speeds.py` | one row per flight: the counters and verdicts of steps 1 to 5, the median and 90th percentile of the step speed | `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/speed_histograms/counts.npz` | `scripts/preprocessing/speed_histograms.py` | per wing class, the steps and the windows of `excursion.window_s` per km/h of ground speed | `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the sampling interval and the counters of steps 1 to 5, then the horizontal excursion rule with three windows | `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | per wing class, the steps and the windows of `excursion.window_s` per m/s of vertical speed, from both altitudes, in the witness flights | `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/vertical/flights.csv` | `scripts/preprocessing/vertical_counts.py` | one row per flight: the counters of steps 1 to 6, then the vertical excursion rule on the GNSS altitude and, in the witness flights, on the pressure altitude | `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/<result>/run.yaml` | the script of the result | the record of the run | you, before the thesis uses the result |
 
 What each file holds, column by column, is in [Formats](#formats).
 
@@ -288,12 +284,7 @@ The disk also holds files that no code of this repository writes or reads:
 
 ## Results and trials
 
-A full run writes in `derived/`, and a new run overwrites the previous one: its `run.yaml`
-says which commit produced it. A run with `--sample` writes the same files in `scratch/`,
-which nothing reads and which can be deleted at any time.
-
-## Adding a result
-
-A script that saves a result writes it in `derived/<area>/<result>/`, next to a
-`run.yaml`; its files get a row in the table of [Files](#files) and their format in
-[Formats](#formats).
+A full run writes in `derived/<area>/<result>/`, next to a `run.yaml`, and overwrites the
+previous run. A run with `--sample` writes the same files in `scratch/`, which nothing
+reads and which can be deleted at any time. A new result gets a row in [Files](#files)
+and its format in [Formats](#formats).

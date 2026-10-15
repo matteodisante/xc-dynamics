@@ -38,9 +38,8 @@ flowchart LR
 All the code that does the work, one subpackage per area (see [Areas](#areas)):
 `download/` fetches the FFVL archive, `preprocessing/` reads the IGC tracks and tests
 them, `common/` holds what every script uses, such as the record of a run. A function takes
-every setting as an argument: it never reads `configs/`, and never imports `scripts/`
-or `thesis/`. So each function can be tested on its own (`tests/` mirrors this folder)
-and is documented from its docstring in the [Reference](reference/download.md).
+every setting as an argument, so it can be tested on its own (`tests/` mirrors this
+folder); its docstring is its documentation, in the [Reference](reference/download.md).
 
 ### `scripts/`: the entry points
 
@@ -59,19 +58,13 @@ script's docstring says what it is for and how to run it.
 
 ### `thesis/`: the manuscript
 
-- `main.tex`, `preamble.tex`, `chapters/`: the LaTeX source. The text never types a
-  number that comes from the data or from a config: it writes a macro. Chapters are
-  named after their subject (`chapters/dataset.tex`); their order, and so their
-  numbers, is the list of `\input` in `main.tex`.
-- `scripts/`: the scripts that write those macros and figures. `config.py` turns the
-  thresholds into macros; each chapter that quotes data has its own script, named like
-  the chapter (`dataset.py`, `preprocessing.py`). They read what the analysis saved and
-  never run it: at most they count, take percentages and draw. The diagrams of a rule
-  are the exception: they run the rule itself on synthetic tracks, so they need no data.
-- `generated/`: what these scripts write, `.tex` files in `tex/` and figures in
-  `figures/<chapter>/`, read by `main.tex` and the chapters. They are never edited by
-  hand. They are committed, so the thesis compiles on a machine without the data folder.
-- `build.sh`: runs the scripts, then compiles. See [Building the thesis](guides/thesis.md).
+The LaTeX source (`main.tex`, `preamble.tex`, `chapters/`), the scripts that turn the
+thresholds and the saved results into macros, tables and figures (`scripts/`, writing in
+`generated/`), and `build.sh`, which runs them and compiles. The scripts read what the
+analysis saved and never run it: at most they count, take percentages and draw. The
+diagrams of a rule are the exception: they run the rule itself on synthetic tracks, so
+they need no data. File names, generated files and macros: [Building the
+thesis](guides/thesis.md).
 
 ## Areas
 
@@ -94,8 +87,8 @@ each step of the pre-processing chapter leads to its function.
 
 ## Rules
 
-- `src/` imports nothing from `scripts/` or `thesis/`. Both import `src/`; nothing
-  imports them.
+- `src/` never reads `configs/` and imports nothing from `scripts/` or `thesis/`. Both
+  import `src/`; nothing imports them.
 - The analysis never reads `thesis/`.
 - A number in the thesis has one source, a config key or a saved result, and reaches
   the text through a macro.

@@ -9,13 +9,12 @@ data both ways; the other machine gets the code from GitHub and never pushes.
 - **Paths.** Saved files hold paths relative to the data folders (the catalog's
   `local_path`), so they work wherever the disk is mounted. Every script takes the
   folders on the command line, `--root` and `--tracks`.
-- **Record.** A script that computes results, such as `flight_speeds.py`, saves a
-  `run.yaml` next to them (the download does not): command, git commit,
-  whether the code had uncommitted changes, machine, system, start and end time, and the
-  thresholds it used.
-- **Results and trials.** A full run writes in `derived/` of the data folder: these are the
-  results the thesis reads. A trial (`--sample`) writes in `scratch/`, which nothing in the
-  thesis reads and which can be deleted at any time.
+- **Record.** A script that computes results saves a `run.yaml` next to them, with the
+  commit, whether the code had uncommitted changes, the machine and the thresholds
+  ([example](../data.md#run-record)); the download does not.
+- **Results and trials.** A full run writes in `derived/`, the results the thesis reads; a
+  trial (`--sample`) writes in `scratch/`, which nothing reads
+  ([Data folder](../data.md#results-and-trials)).
 - **Thesis.** Figures, tables and macros are made only on the hub, by `thesis/scripts/`,
   from what is in `derived/`. So it does not matter where a run happened.
 

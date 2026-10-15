@@ -1,24 +1,22 @@
-# Pre-processing: steps and modules
+# Pre-processing
 
-The pre-processing turns each IGC file into a trajectory fit for analysis. The thesis
-describes it step by step, in the pre-processing chapter, one section per step. The
-code does not number the steps: this page is the one place that joins the two, and its
-step numbers only give the order in which the steps run. Find the section in the
-thesis, read across the row, and you have the function, the thresholds and the test.
+The pre-processing turns each IGC file into segments of clean fixes, each with a time, a
+position and an altitude. The thesis describes it in the chapter Trajectory
+pre-processing, one section per step, in the order they run; this page leads from each
+step to its code, its thresholds and the results it is chosen on.
 
-## Scheme
+## Steps
 
 ```mermaid
 flowchart TD
     igc[/"IGC file"/]
-    cfg["configs/preprocessing.yaml<br>thresholds"]
-    read["1 · read_igc<br>reads the fixes"]
-    alt["2 · altitude_channel, known_altitude<br>checks the GNSS altitude,<br>deletes fixes without one"]
-    clock["3 · increasing_time<br>deletes fixes with a stale clock"]
-    rep["4 · moving_position<br>deletes repeated positions"]
-    speed["5 · track_speed<br>checks the speed of the track"]
-    exc["6 · horizontal_excursions<br>deletes unreachable fixes,<br>splits where the track does not come back"]
-    vert["7 · vertical_excursions<br>the same on the GNSS altitude,<br>inside each segment"]
+    read["1 · Reading the fixes"]
+    alt["2 · Choice of altitude channel"]
+    clock["3 · Clock"]
+    rep["4 · Repeated positions"]
+    speed["5 · Fast tracks"]
+    exc["6 · Horizontal excursions"]
+    vert["7 · Vertical excursions"]
     todo["8 onwards, not written yet:<br>take-off and landing,<br>segments and grid, population,<br>local coordinates"]
     out[("clean trajectory")]
     drop(["flight dropped"])
@@ -26,104 +24,61 @@ flowchart TD
     igc --> read --> alt --> clock --> rep --> speed --> exc --> vert --> todo --> out
     alt -->|"gnss_ok is false"| drop
     speed -->|"speed_ok is false"| drop
-    cfg -.-> alt
-    cfg -.-> speed
-    cfg -.-> exc
-    cfg -.-> vert
 
     classDef pending stroke-dasharray: 5 5
     class todo pending
 ```
 
-Steps 2, 3, 4, 6 and 7 delete single fixes, and steps 6 and 7 can also split the flight;
-steps 2 and 5 judge the whole flight and can drop it.
+| Step | What it does | Function | Thresholds |
+|---|---|---|---|
+| 1 · Reading the fixes | each `B` record becomes a fix with time, position and both altitudes; unreadable records are skipped | [`read_igc`][xc_dynamics.preprocessing.igc.read_igc] | none |
+| 2 · Choice of altitude channel | drops the flight if its GNSS altitude is too often missing or too flat; marks the barometer as a witness; deletes the fixes without a GNSS altitude | [`altitude_channel`][xc_dynamics.preprocessing.altitude.altitude_channel], then [`known_altitude`][xc_dynamics.preprocessing.altitude.known_altitude] | `altitude.*` |
+| 3 · Clock | deletes the fixes that do not come after every fix before them | [`increasing_time`][xc_dynamics.preprocessing.clean.increasing_time] | none |
+| 4 · Repeated positions | deletes the fixes at the position of the fix before | [`moving_position`][xc_dynamics.preprocessing.clean.moving_position] | none |
+| 5 · Fast tracks | drops the flight if its median step speed is too high | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.median_max_kmh` |
+| 6 · Horizontal excursions | deletes the fixes the glider could not reach, when the track comes back within W; otherwise splits the flight | [`horizontal_excursions`][xc_dynamics.preprocessing.excursion.horizontal_excursions] | `speed.max_kmh`, `excursion.window_s` |
+| 7 · Vertical excursions | the same on the GNSS altitude, inside each segment | [`vertical_excursions`][xc_dynamics.preprocessing.excursion.vertical_excursions] | `vertical.max_ms`, `excursion.window_s` |
 
-## Map
-
-The steps run in the order of the table. The modules are in
+The modules are in
 [`src/xc_dynamics/preprocessing/`](https://github.com/matteodisante/xc-dynamics/tree/main/src/xc_dynamics/preprocessing),
-the tests in `tests/preprocessing/`, the thresholds in `configs/preprocessing.yaml`.
+their tests in `tests/preprocessing/`.
 
-| Step | Thesis section | Function | Thresholds | Returns |
-|---|---|---|---|---|
-| 1 | Reading the fixes | [`read_igc`][xc_dynamics.preprocessing.igc.read_igc] | none | the fixes, one row each |
-| 2 | Choice of altitude channel | [`altitude_channel`][xc_dynamics.preprocessing.altitude.altitude_channel], then [`known_altitude`][xc_dynamics.preprocessing.altitude.known_altitude] | `altitude.*` | a verdict on the flight, then a mask of the fixes to keep |
-| 3 | Clock | [`increasing_time`][xc_dynamics.preprocessing.clean.increasing_time] | none | a mask of the fixes to keep |
-| 4 | Repeated positions | [`moving_position`][xc_dynamics.preprocessing.clean.moving_position] | none | a mask of the fixes to keep |
-| 5 | Fast tracks | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on the speeds of [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.median_max_kmh` | a verdict on the flight |
-| 6 | Horizontal excursions | [`horizontal_excursions`][xc_dynamics.preprocessing.excursion.horizontal_excursions] | `speed.max_kmh`, `excursion.window_s` | a mask of the fixes to keep, and a mask of the first fix of each new segment |
-| 7 | Vertical excursions | [`vertical_excursions`][xc_dynamics.preprocessing.excursion.vertical_excursions] | `vertical.max_ms`, `excursion.window_s` | the same two masks, the scan running inside each segment of step 6 |
+## How the code runs them
 
-## Two kinds of step
-
-- **Rules on fixes** (`known_altitude` in step 2, steps 3 and 4 in `clean.py`, steps 6
-  and 7 in `excursion.py`) return a boolean mask, `True` for the fixes to keep. Each runs
-  on the fixes the previous ones left, so the caller filters between one rule and the
-  next. Steps 6 and 7 also return a second mask, `True` on the first fix of each new
-  segment: where the flight is split.
-- **Verdicts on a flight** (`altitude_channel` in step 2, step 5) return a dictionary
-  with the measured quantities and a flag, `gnss_ok` or `speed_ok`, that says whether
-  the flight stays. They never delete a fix.
-
-Steps 5, 6 and 7 divide by the time between fixes, so they need the times the clock rule
-leaves: strictly increasing.
-
-Before any step, `before_horizontal` also records in the row of each flight the sampling
-interval of the track as read
-([`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval]), shown in
-the dataset chapter. It is a measure: no step uses it.
-
-The excursion rules need thresholds chosen on the fixes they receive, so `flight.py` runs
-a flight through the steps before each rule:
-[`before_horizontal`][xc_dynamics.preprocessing.flight.before_horizontal] stops before
-step 6, [`before_vertical`][xc_dynamics.preprocessing.flight.before_vertical] after it,
-and numbers in a column `segment` the pieces step 6 split the flight into.
-[`preprocess`][xc_dynamics.preprocessing.flight.preprocess] runs every step, and numbers
-the segments again after the splits of step 7: one column, whichever rule made the split.
+- **Two kinds of step.** A rule on fixes (`known_altitude`, steps 3, 4, 6 and 7) returns
+  a mask, `True` for the fixes to keep; the excursion rules also return a mask of the
+  first fix of each new segment. A verdict on a flight (`altitude_channel`, step 5)
+  returns the quantities it measured and a flag, `gnss_ok` or `speed_ok`, and deletes no
+  fix.
+- **Order.** Each rule runs on the fixes the previous ones left. Steps 5 to 7 divide by
+  the time between fixes, so they need the strictly increasing times the clock rule
+  leaves.
+- **Pipelines**, in `flight.py`:
+  [`before_horizontal`][xc_dynamics.preprocessing.flight.before_horizontal] runs steps 1
+  to 5, [`before_vertical`][xc_dynamics.preprocessing.flight.before_vertical] steps 1 to
+  6 and numbers the segments in a column `segment`,
+  [`preprocess`][xc_dynamics.preprocessing.flight.preprocess] every step, numbering the
+  segments again after the splits of step 7. A script that chooses a threshold runs the
+  steps before its rule, so it sees the fixes the rule will receive.
+- **Sampling interval.** `before_horizontal` also records the sampling interval of the
+  track as read ([`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval]),
+  shown in the dataset chapter; no step uses it.
 
 ## Thresholds
 
-Every threshold is a key of `configs/preprocessing.yaml`; a function receives it as an
-argument and never reads the file. The thesis quotes the same keys as macros (see
-[Building the thesis](guides/thesis.md)).
+Every threshold is a key of `configs/preprocessing.yaml`, passed to the functions as an
+argument, and quoted by the thesis as a macro ([Building the thesis](guides/thesis.md)).
+The speed thresholds are set per discipline, `para` and `hang`. The scripts are in
+`scripts/preprocessing/`; `thesis/scripts/preprocessing.py` draws their results. Why each
+value: the thesis section of its step.
 
-The two speed thresholds are set per discipline, `para` and `hang`, and judge different
-things:
-
-- `speed.median_max_kmh` (step 5) judges a whole flight by the median speed of its steps.
-  It was read off the histograms of the median speed of every flight, drawn by
-  `thesis/scripts/preprocessing.py` from the output of
-  `scripts/preprocessing/flight_speeds.py`.
-- `speed.max_kmh` judges a single step, in the horizontal excursion rule: a faster one is
-  a recorder error. It is read off the histograms of
-  `scripts/preprocessing/speed_histograms.py`, which count the speed of every step and
-  the speed over every window of `excursion.window_s` seconds
-  ([`window_speed`][xc_dynamics.preprocessing.speed.window_speed]). A single wrong fix
-  barely moves the speed over a window, so its histogram follows real flight much
-  further than that of the steps, and `speed.max_kmh` is where real flight ends. The
-  window lasts W, the time the rule waits for a track to come back, so the window from
-  the last accepted fix ends within the wait: a threshold above every real window speed
-  never splits real flight (thesis, section Horizontal excursions).
-
-W itself, `excursion.window_s`, is set by hand. `scripts/preprocessing/excursion_counts.py`
-runs the rule on every flight with W, half W (`excursion.window_short_s`) and twice W
-(`excursion.window_long_s`), and counts the fixes deleted and the splits. The thesis
-shows that the output changes little across the three, and that W leaves recorders
-sampling every 10 s two fixes to come back. No step uses the other two windows.
-
-The top vertical speed, `vertical.max_ms`, is set per discipline like `speed.max_kmh`, for
-the GNSS altitude. It is read off the histograms of
-`scripts/preprocessing/vertical_histograms.py`, which count, in the flights whose
-barometer is a witness (`altitude.baro_witness_*`), the vertical speed of every step and
-over every window of `excursion.window_s` seconds, from both altitude channels
-([`vertical_speeds`][xc_dynamics.preprocessing.altitude.vertical_speeds],
-[`vertical_window_speeds`][xc_dynamics.preprocessing.altitude.vertical_window_speeds]).
-The barometer measures altitude independently of the GNSS, so its speed over windows
-shows real vertical motion, and `vertical.max_ms` is where that ends (thesis, section
-Vertical excursions). `scripts/preprocessing/vertical_counts.py` runs the rule on every
-flight and counts the fixes deleted and the splits; in the witness flights it also runs
-the rule on the pressure altitude, where what it removes is real flight, or an error both
-channels share.
+| Key | Step | Chosen on | Script → thesis |
+|---|---|---|---|
+| `altitude.*` | 2 | set by hand | |
+| `speed.median_max_kmh` | 5 | the median step speed of every flight | `flight_speeds.py` → figures median-speed |
+| `speed.max_kmh` | 6 | the ground speed over windows of W ([`window_speed`][xc_dynamics.preprocessing.speed.window_speed]), by wing class | `speed_histograms.py` → figure top-speed |
+| `excursion.window_s`, W | 6, 7 | set by hand, checked with half and twice W (`window_short_s`, `window_long_s`, used by no step) | `excursion_counts.py` → excursion table |
+| `vertical.max_ms` | 7 | the vertical speed of the barometer over windows of W, in the flights whose barometer is a witness ([`vertical_speeds`][xc_dynamics.preprocessing.altitude.vertical_speeds], [`vertical_window_speeds`][xc_dynamics.preprocessing.altitude.vertical_window_speeds]) | `vertical_histograms.py` → figure vertical-speed; checked by `vertical_counts.py` → vertical table |
 
 ## Adding a step
 
@@ -131,5 +86,5 @@ channels share.
    `tests/preprocessing/`, with the thresholds as arguments.
 2. Add the keys, if any, to `configs/preprocessing.yaml`.
 3. Add the module to [Reference](reference/preprocessing.md) if it is new.
-4. Add a node to the scheme and a row to the table above.
+4. Add the step to the scheme and to the tables of this page.
 5. If a script saves a result for the step, add its files to [Data folder](data.md).
