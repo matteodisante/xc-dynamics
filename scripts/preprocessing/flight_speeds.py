@@ -79,7 +79,7 @@ def main() -> None:
     result = pd.DataFrame(rows)
     result.insert(0, "flight_id", flights.flight_id.to_numpy())
     # Counts stay whole numbers: Int64 allows the empty cells of flights stopped early.
-    counts = ["fixes_read", "clock_deleted", "repeated_deleted", "steps"]
+    counts = ["fixes_read", "altitude_deleted", "clock_deleted", "repeated_deleted", "steps"]
     result[counts] = result[counts].astype("Int64")
 
     # A full run is a result; a sample is only a trial, so it never lands in derived/.

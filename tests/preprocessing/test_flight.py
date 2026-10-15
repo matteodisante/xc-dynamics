@@ -1,4 +1,4 @@
-from xc_dynamics.preprocessing.flight import before_excursions, before_vertical
+from xc_dynamics.preprocessing.flight import before_excursions, before_vertical, preprocess
 
 ALTITUDE = dict(
     gnss_present_min=0.95,
@@ -36,6 +36,14 @@ def test_clock_then_repeated_positions(tmp_path):
     assert (row["clock_deleted"], row["repeated_deleted"]) == (1, 1)
 
 
+def test_fix_without_gnss_altitude_is_deleted(tmp_path):
+    # 20 fixes, one without a GNSS altitude (0 in IGC): 95% present, so the flight is kept.
+    records = [b(s, 30000 + 5 * s, 0 if s == 7 else 1000 + 10 * s) for s in range(20)]
+    fixes, row = before_excursions(write(tmp_path, *records), ALTITUDE, MEDIAN_MAX_KMH)
+    assert row["gnss_ok"] and row["altitude_deleted"] == 1
+    assert 7 not in list(fixes.t) and len(fixes) == 19
+
+
 def test_flight_without_gnss_altitude_stops_at_the_altitude_channel(tmp_path):
     path = write(tmp_path, b(0, 30000, 0), b(1, 30100, 0), b(2, 30200, 0))
     _, row = before_excursions(path, ALTITUDE, MEDIAN_MAX_KMH)
@@ -65,3 +73,14 @@ def test_horizontal_excursions_delete_a_spike_and_split_at_a_jump(tmp_path):
     assert list(fixes.t) == [0, 1, 2, 4, 5, 6, 7, 8, 9, 10]
     assert list(fixes.segment) == [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
     assert (row["excursion_deleted"], row["excursion_splits"]) == (1, 1)
+
+
+def test_vertical_excursions_delete_a_spike_and_split_at_a_jump(tmp_path):
+    # A clean horizontal track climbing at 2 m/s; the GNSS altitude has a spike of 300 m
+    # at 10 s that comes back at 11 s, and jumps by 3000 m at 20 s for good.
+    gnss = [1000 + 2 * s + 300 * (s == 10) + 3000 * (s >= 20) for s in range(30)]
+    path = write(tmp_path, *(b(s, 30000 + 5 * s, z) for s, z in enumerate(gnss)))
+    fixes, row = preprocess(path, ALTITUDE, MEDIAN_MAX_KMH, max_kmh=100.0, window_s=3.0, max_ms=30.0)
+    assert (row["vertical_deleted"], row["vertical_splits"]) == (1, 1)
+    assert list(fixes.t) == [s for s in range(30) if s != 10]
+    assert list(fixes.segment) == [0] * 19 + [1] * 10

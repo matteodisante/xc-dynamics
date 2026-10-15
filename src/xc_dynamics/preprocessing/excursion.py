@@ -10,7 +10,13 @@ from the block. A block still open at the end of the track is deleted.
 
 The first anchor of each segment is the first fix whose step to the next fix is
 reachable, and the fixes before it are deleted, so a wrong fix never becomes an anchor.
+
+The scan judges one coordinate through its distance: excursions applies it to the
+horizontal position, vertical_excursions to the GNSS altitude inside each segment that
+the horizontal scan left.
 """
+
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -18,26 +24,27 @@ import pandas as pd
 from xc_dynamics.preprocessing.speed import distance_m
 
 
-def excursions(fixes: pd.DataFrame, max_kmh: float, window_s: float) -> tuple[np.ndarray, np.ndarray]:
-    """Two masks over the fixes: keep, True for the fixes to keep, and split_before, True on
-    the first fix of every segment after the first. The times must be strictly increasing,
-    as the clock rule leaves them."""
-    t = fixes["t"].to_numpy()
-    lat, lon = fixes["lat"].to_numpy(), fixes["lon"].to_numpy()
+def scan(
+    t: np.ndarray, distance: Callable, max_speed: float, window_s: float
+) -> tuple[np.ndarray, np.ndarray]:
+    """The excursion rule on one coordinate. distance(i, j) is the distance from fix i to
+    fix j, for two indices or two arrays of indices, in the unit of max_speed times one
+    second. Two masks over the fixes: keep, True for the fixes to keep, and split_before,
+    True on the first fix of every segment after the first. The times must be strictly
+    increasing."""
     n = len(t)
-    max_speed = max_kmh / 3.6  # km/h -> m/s
     keep = np.zeros(n, dtype=bool)  # a fix is kept only when the scan accepts it
     split_before = np.zeros(n, dtype=bool)
 
     # Whether each fix i+1 is reachable from fix i. The anchor is almost always the fix
     # just before, so the scan mostly reads these values instead of computing a distance.
-    step_ok = distance_m(lat[:-1], lon[:-1], lat[1:], lon[1:]) <= max_speed * np.diff(t)
+    step_ok = distance(np.arange(n - 1), np.arange(1, n)) <= max_speed * np.diff(t)
 
     def reachable(a: int, j: int) -> bool:
         """Whether fix j is reachable from the anchor a."""
         if j == a + 1:
             return bool(step_ok[a])
-        return bool(distance_m(lat[a], lon[a], lat[j], lon[j]) <= max_speed * (t[j] - t[a]))
+        return bool(distance(a, j) <= max_speed * (t[j] - t[a]))
 
     def first_anchor(i: int) -> int:
         """The first fix from i whose step to the next fix is reachable; n if there is none."""
@@ -78,4 +85,40 @@ def excursions(fixes: pd.DataFrame, max_kmh: float, window_s: float) -> tuple[np
             keep[a] = True
             split_before[a] = True
             j = a + 1
+    return keep, split_before
+
+
+def excursions(fixes: pd.DataFrame, max_kmh: float, window_s: float) -> tuple[np.ndarray, np.ndarray]:
+    """The scan on the horizontal position, with the distance on the sphere. Two masks over
+    the fixes: keep, True for the fixes to keep, and split_before, True on the first fix of
+    every segment after the first. The times must be strictly increasing, as the clock rule
+    leaves them."""
+    lat, lon = fixes["lat"].to_numpy(), fixes["lon"].to_numpy()
+
+    def distance(i, j):
+        """Distance in metres on the sphere from fix i to fix j."""
+        return distance_m(lat[i], lon[i], lat[j], lon[j])
+
+    return scan(fixes["t"].to_numpy(), distance, max_kmh / 3.6, window_s)  # km/h -> m/s
+
+
+def vertical_excursions(fixes: pd.DataFrame, max_ms: float, window_s: float) -> tuple[np.ndarray, np.ndarray]:
+    """The scan on the GNSS altitude, with the vertical distance, inside each segment. Two
+    masks over the fixes: keep, True for the fixes to keep, and split_before, True on the
+    first fix of every new segment the scan starts. The fixes are those before_vertical
+    returns: strictly increasing times, a GNSS altitude on every fix, a column segment."""
+    t = fixes["t"].to_numpy()
+    z = fixes["gnss_alt"].to_numpy()
+    segment = fixes["segment"].to_numpy()
+    keep = np.zeros(len(t), dtype=bool)
+    split_before = np.zeros(len(t), dtype=bool)
+    for s in np.unique(segment):
+        i = np.flatnonzero(segment == s)  # the fixes of this segment, in order
+        z_s = z[i]
+
+        def distance(p, q):
+            """Vertical distance in metres from fix p to fix q of the segment."""
+            return np.abs(z_s[q] - z_s[p])
+
+        keep[i], split_before[i] = scan(t[i], distance, max_ms, window_s)
     return keep, split_before

@@ -1,7 +1,8 @@
 """The altitude channel of the pre-processing.
 
 The analysis uses the GNSS altitude. A flight is kept only if that channel has a
-value at most fixes and actually moves. The pressure altitude is never used in its
+value at most fixes and actually moves, and in a flight kept the fixes without a GNSS
+altitude are deleted. The pressure altitude is never used in its
 place: it only serves as a witness in later steps, if it passes the same two tests and
 its range agrees with the GNSS range.
 """
@@ -39,6 +40,11 @@ def altitude_channel(
         # Written without a ratio, so a flat GNSS channel does not divide by zero.
         and abs(baro_range - gnss_range) <= baro_witness_range_tolerance * gnss_range,
     }
+
+
+def known_altitude(fixes: pd.DataFrame) -> np.ndarray:
+    """True for the fixes with a GNSS altitude, the ones to keep."""
+    return fixes["gnss_alt"].notna().to_numpy()
 
 
 def vertical_speeds(fixes: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:

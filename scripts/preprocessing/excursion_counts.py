@@ -116,7 +116,7 @@ def main() -> None:
     result.insert(0, "flight_id", flights.flight_id.to_numpy())
     # Counts stay whole numbers: Int64 allows the empty cells of flights stopped early.
     counts = [
-        "fixes_read", "clock_deleted", "repeated_deleted", "excursion_fixes",
+        "fixes_read", "altitude_deleted", "clock_deleted", "repeated_deleted", "excursion_fixes",
         "excursion_deleted", "excursion_splits",
         "short_deleted", "short_splits", "long_deleted", "long_splits",
     ]

@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from xc_dynamics.preprocessing.excursion import excursions
+from xc_dynamics.preprocessing.excursion import excursions, vertical_excursions
 from xc_dynamics.preprocessing.speed import EARTH_RADIUS_M
 
 METRES_PER_DEGREE = EARTH_RADIUS_M * np.pi / 180
 MAX_KMH = 100.0  # 27.8 m/s
+MAX_MS = 30.0
 WINDOW_S = 20.0
 
 
@@ -87,3 +88,50 @@ def test_real_flight_faster_than_the_top_speed_for_longer_than_the_window_is_spl
     keep, split_before = excursions(track(np.zeros(len(north)), north), MAX_KMH, WINDOW_S)
     assert list(np.flatnonzero(~keep)) == list(range(21, 80))
     assert list(np.flatnonzero(split_before)) == [80]
+
+
+def profile(z, segment=None):
+    """Fixes one second apart at the given GNSS altitudes, all in segment 0 unless given."""
+    z = np.asarray(z, dtype=float)
+    return pd.DataFrame({
+        "t": np.arange(len(z), dtype=float),
+        "gnss_alt": z,
+        "segment": np.zeros(len(z), dtype=int) if segment is None else segment,
+    })
+
+
+def climb(n, rate_m_s=2.0):
+    """n altitudes climbing at a steady rate from 1000 m."""
+    return 1000 + rate_m_s * np.arange(n)
+
+
+def test_altitude_spike_is_deleted():
+    z = climb(50)
+    z[20] += 300
+    keep, split_before = vertical_excursions(profile(z), MAX_MS, WINDOW_S)
+    assert list(np.flatnonzero(~keep)) == [20]
+    assert not split_before.any()
+
+
+def test_altitude_jump_that_does_not_come_back_splits_the_flight():
+    z = climb(80)
+    z[30:] += 3000
+    keep, split_before = vertical_excursions(profile(z), MAX_MS, WINDOW_S)
+    assert keep.all()
+    assert list(np.flatnonzero(split_before)) == [30]
+
+
+def test_spiral_below_the_top_vertical_speed_is_untouched():
+    rates = [2.0] * 20 + [-25.0] * 60 + [2.0] * 20  # 60 s of spiral at 25 m/s
+    z = 2000 + np.r_[0, np.cumsum(rates)]
+    keep, split_before = vertical_excursions(profile(z), MAX_MS, WINDOW_S)
+    assert keep.all() and not split_before.any()
+
+
+def test_each_segment_is_scanned_on_its_own():
+    # The horizontal scan already split the flight where the altitude jumps by 3 km.
+    z = climb(60)
+    z[30:] += 3000
+    segment = np.r_[np.zeros(30, dtype=int), np.ones(30, dtype=int)]
+    keep, split_before = vertical_excursions(profile(z, segment), MAX_MS, WINDOW_S)
+    assert keep.all() and not split_before.any()
