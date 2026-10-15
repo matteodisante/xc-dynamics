@@ -50,9 +50,20 @@ altitude is never substituted for a missing GNSS value.
 
 The barometer is checked with the same two conditions on $h^{\mathrm{baro}}$, with
 thresholds \cfgAltitudeBaroWitnessPresentMin\ and
-\SI{\cfgAltitudeBaroWitnessMinRangeM}{\metre}. \textcolor{red}{A flight whose
-barometer passes is marked, so that later cleaning steps can use pressure altitude as
-independent evidence; the mark does not decide whether the flight is kept.}
+\SI{\cfgAltitudeBaroWitnessMinRangeM}{\metre}, and with a third: its range must agree
+with the GNSS range,
+\begin{equation}
+  \bigl|R^{\mathrm{baro}}-R^{\mathrm{GNSS}}\bigr|
+  \leq\cfgAltitudeBaroWitnessRangeTolerance\,R^{\mathrm{GNSS}},
+  \label{eq:baro-witness}
+\end{equation}
+where $R$ is the highest minus the lowest altitude of a channel. Pressure altitude
+departs from true altitude by a few percent when the temperature departs from the
+standard atmosphere, so a barometer that measures altitude passes; some recorders write
+a raw pressure reading or feet in this field, and fail. A flight whose barometer passes
+the three conditions is a witness: its pressure altitude, measured independently of the
+GNSS, serves only to choose the top vertical speed of the vertical excursion rule
+(Section~\ref{sec:vertical}), and never decides whether the flight is kept.
 
 \section{Clock}
 \label{sec:clock}
@@ -289,3 +300,7 @@ that it deletes.}
 \label{tab:excursion-windows}
 \input{generated/tex/preprocessing-excursion}
 \end{table}
+
+\section{Vertical excursions}
+\label{sec:vertical}
+\textcolor{red}{To be written.}
