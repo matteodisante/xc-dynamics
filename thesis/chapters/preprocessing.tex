@@ -318,17 +318,6 @@ flight therefore ends where the fastest class reaches that tail. We set $v_{\max
 \SI[per-mode=symbol]{\cfgSpeedMaxKmhPara}{\kilo\metre\per\hour} for paragliders and
 \SI[per-mode=symbol]{\cfgSpeedMaxKmhHang}{\kilo\metre\per\hour} for hang gliders.
 
-With $W$ halved and doubled, \SI{\cfgExcursionWindowShortS}{\second} and
-\SI{\cfgExcursionWindowLongS}{\second}, and $v_{\max}$ unchanged
-(Table~\ref{tab:excursion-windows}), the share of fixes deleted barely changes: almost
-every excursion that comes back does so within the shortest window. Every excursion that
-outlasts $W$ splits the flight, so the share of flights split roughly doubles when $W$ is
-halved and halves when it is doubled, and stays small for every window. A longer $W$ also
-bridges larger jumps: after a jump shorter than about $v_{\max}W$ the track counts as
-returned, and the fixes in between are deleted. The choice affects few flights, and we
-keep the middle value, which still leaves the slowest common recorders, sampling every
-\SI{10}{\second} (Figure~\ref{fig:sampling-interval}), two fixes to come back.
-
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{generated/figures/preprocessing/top-speed}
@@ -342,6 +331,17 @@ values beyond the axis count in the share. Dashed line: the top speed $v_{\max}$
 \SI[per-mode=symbol]{\cfgSpeedMaxKmhHang}{\kilo\metre\per\hour} for hang gliders.}
 \label{fig:top-speed}
 \end{figure}
+
+With $W$ halved and doubled, \SI{\cfgExcursionWindowShortS}{\second} and
+\SI{\cfgExcursionWindowLongS}{\second}, and $v_{\max}$ unchanged
+(Table~\ref{tab:excursion-windows}), the share of fixes deleted barely changes: almost
+every excursion that comes back does so within the shortest window. Every excursion that
+outlasts $W$ splits the flight, so the share of flights split roughly doubles when $W$ is
+halved and halves when it is doubled, and stays small for every window. A longer $W$ also
+bridges larger jumps: after a jump shorter than about $v_{\max}W$ the track counts as
+returned, and the fixes in between are deleted. The choice affects few flights, and we
+keep the middle value, which still leaves the slowest common recorders, sampling every
+\SI{10}{\second} (Figure~\ref{fig:sampling-interval}), two fixes to come back.
 
 \begin{table}[htbp]
 \centering\small
