@@ -5,6 +5,9 @@ altitude:
   gnss_min_range_m: 30.0  # a flatter channel is stuck, or the flight barely moved
   baro_witness_present_min: 0.95
   baro_witness_min_range_m: 30.0
+  # The pressure range must be within this share of the GNSS range: further off, the
+  # field is not an altitude in metres.
+  baro_witness_range_tolerance: 0.1
 
 speed:  # horizontal speed between consecutive fixes
   max_kmh:  # top speed of the discipline: a faster step is a recorder error

@@ -49,14 +49,16 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | File | Written by | Holds | Read by |
 |---|---|---|---|
 | `raw/raw_xml/<year>.xml` | `scripts/download/download_ffvl.py` | the flight list of a season, as the CFD serves it | `download_ffvl.py` |
-| `catalog/catalog.csv` | `scripts/download/download_ffvl.py` | one row per flight | `flight_speeds.py`, `speed_histograms.py`, `excursion_counts.py`, `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
-| `raw/igc/<season>/*.igc` (tracks folder) | `scripts/download/download_ffvl.py` | the track of a flight | `flight_speeds.py`, `speed_histograms.py`, `excursion_counts.py`, through the catalog's `local_path` |
+| `catalog/catalog.csv` | `scripts/download/download_ffvl.py` | one row per flight | `flight_speeds.py`, `speed_histograms.py`, `excursion_counts.py`, `vertical_histograms.py`, `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
+| `raw/igc/<season>/*.igc` (tracks folder) | `scripts/download/download_ffvl.py` | the track of a flight | `flight_speeds.py`, `speed_histograms.py`, `excursion_counts.py`, `vertical_histograms.py`, through the catalog's `local_path` |
 | `derived/preprocessing/speed/flights.csv` | `scripts/preprocessing/flight_speeds.py` | one row per flight: the counters and verdicts of the pre-processing steps, the median and 90th percentile of its step speed | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/speed/run.yaml` | `scripts/preprocessing/flight_speeds.py` | the record of the run | you, before the thesis uses the result |
 | `derived/preprocessing/speed_histograms/counts.npz` | `scripts/preprocessing/speed_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per km/h of speed, with the bin edges | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/speed_histograms/run.yaml` | `scripts/preprocessing/speed_histograms.py` | the record of the run | you, before the thesis uses the result |
 | `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the sampling interval of the track as read, the counters and verdicts of the steps before the excursion rule, the fixes the rule receives, and the fixes it deletes and the splits it makes with `excursion.window_s`, `excursion.window_short_s` and `excursion.window_long_s` | `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/excursion/run.yaml` | `scripts/preprocessing/excursion_counts.py` | the record of the run | you, before the thesis uses the result |
+| `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per m/s of absolute vertical speed, from the GNSS and from the pressure altitude, in the flights whose barometer is a witness | you, to choose the top vertical speed |
+| `derived/preprocessing/vertical_histograms/run.yaml` | `scripts/preprocessing/vertical_histograms.py` | the record of the run | you, before the thesis uses the result |
 
 What each file holds, column by column, is in [Formats](#formats).
 
@@ -163,7 +165,7 @@ unreadable file gets only `flight_id` and `error`.
 | `gnss_present`, `baro_present` | share of the fixes read with a GNSS or a pressure altitude | ✓ | ✓ |
 | `gnss_range_m`, `baro_range_m` | highest minus lowest altitude of that channel, m | ✓ | ✓ |
 | `gnss_ok` | kept by the altitude channel | ✓ | ✓ |
-| `baro_witness` | the barometer passes the same test | ✓ | ✓ |
+| `baro_witness` | the barometer passes the same test, and its range is within `altitude.baro_witness_range_tolerance` of the GNSS range | ✓ | ✓ |
 | `clock_deleted`, `repeated_deleted` | fixes deleted by the clock and the repeated-position rules | ✓ | ✓ |
 | `median_kmh` | median step speed, km/h | ✓ | ✓ |
 | `speed_ok` | kept by the fast-track rule | ✓ | ✓ |
@@ -204,6 +206,19 @@ array(['', '0', 'A ou 1'], dtype='<U24')
 >>> z["steps"].shape  # paragliders: 12 wing classes
 (12, 401)
 ```
+
+### Vertical speed histograms
+
+`derived/preprocessing/vertical_histograms/counts.npz`: a NumPy archive of six arrays,
+read with `np.load`, with one row per wing class of the catalog and one column per bin of
+absolute vertical speed. Only the flights whose barometer is a witness are counted.
+
+| Array | Shape and type | Holds |
+|---|---|---|
+| `vertical_edges_ms` | 103, float | bin edges: 0, then 0.5 to 100.5 m/s by 1 m/s, then infinity; every bin but the first and the last is centred on a whole m/s |
+| `wing_classes` | one per class, text | the wing class of each row, as in the catalog; `''` for none |
+| `gnss_steps`, `baro_steps` | classes × 102, integer | steps between fixes in each bin, from the GNSS and from the pressure altitude |
+| `gnss_windows`, `baro_windows` | classes × 102, integer | windows of `excursion.window_s` seconds in each bin, from each channel |
 
 ### Run record
 

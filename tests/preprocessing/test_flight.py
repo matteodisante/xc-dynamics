@@ -5,6 +5,7 @@ ALTITUDE = dict(
     gnss_min_range_m=30.0,
     baro_witness_present_min=0.95,
     baro_witness_min_range_m=30.0,
+    baro_witness_range_tolerance=0.1,
 )
 MEDIAN_MAX_KMH = 70.0
 
