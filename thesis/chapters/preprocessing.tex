@@ -320,3 +320,15 @@ for paragliders and \SI[per-mode=symbol]{\cfgVerticalMaxMsHang}{\metre\per\secon
 hang gliders.}
 \label{fig:vertical-speed}
 \end{figure}
+
+\begin{table}[htbp]
+\centering\small
+\caption{The vertical excursion rule with the top vertical speed $v_{z,\max}$ and the
+window $W=\SI{\cfgExcursionWindowS}{\second}$, in the flights kept by the previous steps:
+on the GNSS altitude of every flight, and on the pressure altitude of the flights whose
+barometer is a witness (Section~\ref{sec:altchannel}). Flights split: share of the
+flights split at least once. Fixes deleted: share of the fixes the rule receives that it
+deletes.}
+\label{tab:vertical-excursions}
+\input{generated/tex/preprocessing-vertical}
+\end{table}

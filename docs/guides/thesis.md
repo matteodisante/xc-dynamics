@@ -9,7 +9,7 @@ The script runs, from `thesis/`:
 1. `scripts/config.py`: one macro per threshold of `configs/preprocessing.yaml`.
 2. `scripts/dataset.py`: the numbers and the season tables of the dataset chapter, from
    the two catalogs of the [download](download.md), and the sampling-interval figure.
-3. `scripts/preprocessing.py`: the figures and the excursion table of the pre-processing
+3. `scripts/preprocessing.py`: the figures and the excursion tables of the pre-processing
    chapter, from the results of the pre-processing scripts (see [Data folder](../data.md)).
 4. `latexmk -pdf main.tex`.
 
@@ -41,6 +41,7 @@ compiles on a machine without the data folder.
 | `tex/dataset-seasons-para.tex` | `dataset.py` | the paraglider season table | `chapters/dataset.tex` |
 | `tex/dataset-seasons-hang.tex` | `dataset.py` | the hang-glider season table | `chapters/dataset.tex` |
 | `tex/preprocessing-excursion.tex` | `preprocessing.py` | the flights split and the fixes deleted by the excursion rule with W, half W and twice W | `chapters/preprocessing.tex` |
+| `tex/preprocessing-vertical.tex` | `preprocessing.py` | the flights split and the fixes deleted by the vertical excursion rule, on the GNSS and on the pressure altitude | `chapters/preprocessing.tex` |
 | `figures/dataset/sampling-interval.pdf` | `dataset.py` | the share of the tracks per sampling interval | `chapters/dataset.tex` |
 | `figures/preprocessing/median-speed*.pdf` | `preprocessing.py` | the median speed of every flight, by discipline and by wing class | `chapters/preprocessing.tex` |
 | `figures/preprocessing/top-speed.pdf` | `preprocessing.py` | the speed of steps and over windows, by wing class | `chapters/preprocessing.tex` |

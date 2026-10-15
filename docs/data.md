@@ -23,13 +23,13 @@ On the disk `SSD_DATA` (279 GiB, about half used), with the space each part take
 
 ```text
 SSD_DATA/
-├── paragliders/ffvl_cfd_igc/                 data folder, paragliders        370 MB
+├── paragliders/ffvl_cfd_igc/                 data folder, paragliders        390 MB
 │   ├── raw/raw_xml/<year>.xml                flight lists, one per season    170 MB
 │   ├── catalog/catalog.csv                   one row per flight               79 MB
-│   ├── derived/<area>/<result>/              results the thesis reads         39 MB
-│   └── scratch/<area>/<result>/              trials, same layout, never read   2 MB
-├── hang_gliders/delta_cfd_igc/               data folder, hang gliders        25 MB
-│   └── ...                                   same layout: lists 9 MB, catalog 3 MB, results 4.5 MB
+│   ├── derived/<area>/<result>/              results the thesis reads         58 MB
+│   └── scratch/<area>/<result>/              trials, same layout, never read   3 MB
+├── hang_gliders/delta_cfd_igc/               data folder, hang gliders        26 MB
+│   └── ...                                   same layout: lists 9 MB, catalog 3 MB, results 6 MB
 └── xc-viewer-data/
     ├── paragliders/raw/igc/<season>/<date>_<flight_id>.igc
     │                                         tracks folder: 186 052 tracks    72 GB
@@ -59,7 +59,7 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | `derived/preprocessing/excursion/run.yaml` | `scripts/preprocessing/excursion_counts.py` | the record of the run | you, before the thesis uses the result |
 | `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per m/s of absolute vertical speed, from the GNSS and from the pressure altitude, in the flights whose barometer is a witness | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical_histograms/run.yaml` | `scripts/preprocessing/vertical_histograms.py` | the record of the run | you, before the thesis uses the result |
-| `derived/preprocessing/vertical/flights.csv` | `scripts/preprocessing/vertical_counts.py` | one row per flight: the counters and verdicts of the steps before the vertical excursion rule, the fixes the rule receives, the fixes it deletes and the splits it makes, and the same on the pressure altitude of the witness flights | you, to count what the vertical rule removes |
+| `derived/preprocessing/vertical/flights.csv` | `scripts/preprocessing/vertical_counts.py` | one row per flight: the counters and verdicts of the steps before the vertical excursion rule, the fixes the rule receives, the fixes it deletes and the splits it makes, and the same on the pressure altitude of the witness flights | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical/run.yaml` | `scripts/preprocessing/vertical_counts.py` | the record of the run | you, before the thesis uses the result |
 
 What each file holds, column by column, is in [Formats](#formats).
@@ -186,11 +186,11 @@ The start of `excursion/flights.csv`. The third flight fails the altitude channe
 fourth the fast-track rule, so the cells of the steps they do not reach are empty:
 
 ```text
-flight_id,fixes_read,sampling_s,gnss_present,gnss_range_m,baro_present,baro_range_m,gnss_ok,baro_witness,clock_deleted,repeated_deleted,median_kmh,speed_ok,horizontal_fixes,horizontal_deleted,horizontal_splits,short_deleted,short_splits,long_deleted,long_splits
-20123456,2334,5.0,0.987146529562982,3068.0,1.0,2945.0,True,True,0,32,30.006257365323457,True,2302,2,0,2,0,2,0
-20123457,4224,2.0,0.9955018939393939,742.0,0.9992897727272727,716.0,True,True,0,39,22.818768986013033,True,4185,0,0,0,0,0,0
-20123458,425,31.0,0.0,0.0,0.0,0.0,False,False,,,,,,,,,,,
-20123459,500,1.0,1.0,1551.0,1.0,1551.0,True,True,0,1,280.8930657606387,False,,,,,,,
+flight_id,fixes_read,sampling_s,gnss_present,gnss_range_m,baro_present,baro_range_m,gnss_ok,baro_witness,altitude_deleted,clock_deleted,repeated_deleted,median_kmh,speed_ok,horizontal_fixes,horizontal_deleted,horizontal_splits,short_deleted,short_splits,long_deleted,long_splits
+20123456,2334,5.0,0.987146529562982,3068.0,1.0,2945.0,True,True,30,0,4,29.96217307778665,True,2300,0,0,0,0,0,0
+20123457,4224,2.0,0.9955018939393939,742.0,0.9992897727272727,716.0,True,True,19,0,24,22.81868431909124,True,4181,0,0,0,0,0,0
+20123458,425,31.0,0.0,0.0,0.0,0.0,False,False,,,,,,,,,,,,
+20123459,500,1.0,1.0,1551.0,1.0,1551.0,True,True,0,0,1,280.8930657606387,False,,,,,,,
 ```
 
 ### Speed histograms
@@ -237,12 +237,12 @@ The record of `excursion_counts.py` for paragliders:
 
 ```yaml
 command: scripts/preprocessing/excursion_counts.py para
-commit: 4229145dd4bcdd11d700bd4f2932ce43d69a11c5
+commit: 3f0276aeda52b895b16312877b94965b8af46b48
 uncommitted_changes: false
 machine: HOST.local
 system: macOS-26.6.2-arm64-arm-64bit
 python: 3.12.13
-started: '2026-10-15T13:05:11+02:00'
+started: '2026-10-15T15:24:00+02:00'
 discipline: para
 root: /Volumes/SSD_DATA/paragliders/ffvl_cfd_igc
 tracks: /Volumes/SSD_DATA/xc-viewer-data/paragliders
@@ -264,10 +264,10 @@ thresholds:
 flights: 186052
 unreadable: 0
 judged: 185321
-split: 1786
-split_short: 3858
-split_long: 833
-finished: '2026-10-15T13:25:03+02:00'
+split: 1663
+split_short: 3685
+split_long: 776
+finished: '2026-10-15T15:45:44+02:00'
 ```
 
 ## Files not used here

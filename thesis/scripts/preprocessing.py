@@ -35,6 +35,12 @@ in thesis/generated/tex/:
 
     preprocessing-excursion.tex    body of the table, one row per window
 
+From derived/preprocessing/vertical/flights.csv (scripts/preprocessing/vertical_counts.py),
+the flights split and the fixes deleted by the vertical excursion rule on the GNSS altitude
+and, in the witness flights, on the pressure altitude, in thesis/generated/tex/:
+
+    preprocessing-vertical.tex     body of the table, one row per discipline and altitude
+
 A figure or table whose results are not on disk keeps its committed file.
 
     uv run python thesis/scripts/preprocessing.py
@@ -83,8 +89,9 @@ VERTICAL_NPZ = Path("derived", "preprocessing", "vertical_histograms", "counts.n
 GNSS_COLOR, BARO_COLOR = "#eb6834", "#2a78d6"
 VERTICAL_RANGE = (0, 80)  # m/s shown
 
-# Excursion table.
+# Excursion tables.
 EXCURSION_CSV = Path("derived", "preprocessing", "excursion", "flights.csv")  # in the data folder
+VERTICAL_CSV = Path("derived", "preprocessing", "vertical", "flights.csv")  # in the data folder
 TEX = REPO / "thesis" / "generated" / "tex"
 
 # Excursion rule figure: synthetic tracks along one coordinate, judged by the rule itself.
@@ -399,6 +406,34 @@ def excursion_table(roots: dict, excursion: dict) -> None:
     print(f"Wrote {TEX / 'preprocessing-excursion.tex'}")
 
 
+def vertical_table(roots: dict) -> None:
+    """Body of the vertical excursion table: for each discipline, the rule on the GNSS
+    altitude of every flight and on the pressure altitude of the witness flights, with the
+    flights judged, the share split at least once and the share of fixes deleted."""
+    # Prefix of the columns in flights.csv -> altitude, in the order of the rows.
+    altitudes = {"vertical": "GNSS", "baro": "pressure"}
+    lines = [
+        "% Written by thesis/scripts/preprocessing.py: do not edit.\n",
+        "\\begin{tabular}{@{}llrrr@{}}\n",
+        "\\toprule\n",
+        "& Altitude & Flights & Flights split (\\%) & Fixes deleted (\\%) \\\\\n",
+        "\\midrule\n",
+    ]
+    for d, root in roots.items():
+        flights = pd.read_csv(root / VERTICAL_CSV)
+        for prefix, altitude in altitudes.items():
+            # Only the flights the rule ran on: the others have no fixes counted.
+            f = flights.dropna(subset=[f"{prefix}_fixes"])
+            split = 100 * f[f"{prefix}_splits"].gt(0).mean()
+            deleted = 100 * f[f"{prefix}_deleted"].sum() / f[f"{prefix}_fixes"].sum()
+            label = LABEL[d] if prefix == "vertical" else ""
+            lines.append(f"{label} & {altitude} & \\num{{{len(f)}}} & {split:.2f} & {deleted:.3f} \\\\\n")
+    lines += ["\\bottomrule\n", "\\end{tabular}\n"]
+    TEX.mkdir(parents=True, exist_ok=True)
+    (TEX / "preprocessing-vertical.tex").write_text("".join(lines))
+    print(f"Wrote {TEX / 'preprocessing-vertical.tex'}")
+
+
 def main() -> None:
     config = yaml.safe_load((REPO / "configs" / "download.yaml").read_text(encoding="utf-8"))
     thresholds = yaml.safe_load((REPO / "configs" / "preprocessing.yaml").read_text(encoding="utf-8"))
@@ -427,6 +462,10 @@ def main() -> None:
         excursion_table(roots, thresholds["excursion"])
     else:
         print(f"{EXCURSION_CSV} missing: keeping the committed excursion table.")
+    if all((root / VERTICAL_CSV).exists() for root in roots.values()):
+        vertical_table(roots)
+    else:
+        print(f"{VERTICAL_CSV} missing: keeping the committed vertical excursion table.")
 
 
 if __name__ == "__main__":
