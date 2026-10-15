@@ -13,28 +13,30 @@ flowchart TD
     igc[/"IGC file"/]
     cfg["configs/preprocessing.yaml<br>thresholds"]
     read["1 · read_igc<br>reads the fixes"]
-    alt["2 · altitude_channel<br>checks the GNSS altitude"]
+    alt["2 · altitude_channel, known_altitude<br>checks the GNSS altitude,<br>deletes fixes without one"]
     clock["3 · increasing_time<br>deletes fixes with a stale clock"]
     rep["4 · moving_position<br>deletes repeated positions"]
     speed["5 · track_speed<br>checks the speed of the track"]
     exc["6 · horizontal_excursions<br>deletes unreachable fixes,<br>splits where the track does not come back"]
-    todo["7 onwards, not written yet:<br>take-off and landing,<br>segments and grid, population,<br>local coordinates"]
+    vert["7 · vertical_excursions<br>the same on the GNSS altitude,<br>inside each segment"]
+    todo["8 onwards, not written yet:<br>take-off and landing,<br>segments and grid, population,<br>local coordinates"]
     out[("clean trajectory")]
     drop(["flight dropped"])
 
-    igc --> read --> alt --> clock --> rep --> speed --> exc --> todo --> out
+    igc --> read --> alt --> clock --> rep --> speed --> exc --> vert --> todo --> out
     alt -->|"gnss_ok is false"| drop
     speed -->|"speed_ok is false"| drop
     cfg -.-> alt
     cfg -.-> speed
     cfg -.-> exc
+    cfg -.-> vert
 
     classDef pending stroke-dasharray: 5 5
     class todo pending
 ```
 
-Steps 3, 4 and 6 delete single fixes, and step 6 can also split the flight; steps 2 and 5
-judge the whole flight and can drop it.
+Steps 2, 3, 4, 6 and 7 delete single fixes, and steps 6 and 7 can also split the flight;
+steps 2 and 5 judge the whole flight and can drop it.
 
 ## Map
 
@@ -45,23 +47,25 @@ the tests in `tests/preprocessing/`, the thresholds in `configs/preprocessing.ya
 | Step | Thesis section | Function | Thresholds | Returns |
 |---|---|---|---|---|
 | 1 | Reading the fixes | [`read_igc`][xc_dynamics.preprocessing.igc.read_igc] | none | the fixes, one row each |
-| 2 | Choice of altitude channel | [`altitude_channel`][xc_dynamics.preprocessing.altitude.altitude_channel] | `altitude.*` | a verdict on the flight |
+| 2 | Choice of altitude channel | [`altitude_channel`][xc_dynamics.preprocessing.altitude.altitude_channel], then [`known_altitude`][xc_dynamics.preprocessing.altitude.known_altitude] | `altitude.*` | a verdict on the flight, then a mask of the fixes to keep |
 | 3 | Clock | [`increasing_time`][xc_dynamics.preprocessing.clean.increasing_time] | none | a mask of the fixes to keep |
 | 4 | Repeated positions | [`moving_position`][xc_dynamics.preprocessing.clean.moving_position] | none | a mask of the fixes to keep |
 | 5 | Fast tracks | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on the speeds of [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.median_max_kmh` | a verdict on the flight |
 | 6 | Horizontal excursions | [`horizontal_excursions`][xc_dynamics.preprocessing.excursion.horizontal_excursions] | `speed.max_kmh`, `excursion.window_s` | a mask of the fixes to keep, and a mask of the first fix of each new segment |
+| 7 | Vertical excursions | [`vertical_excursions`][xc_dynamics.preprocessing.excursion.vertical_excursions] | `vertical.max_ms`, `excursion.window_s` | the same two masks, the scan running inside each segment of step 6 |
 
 ## Two kinds of step
 
-- **Rules on fixes** (steps 3 and 4 in `clean.py`, step 6 in `excursion.py`) return a
-  boolean mask, `True` for the fixes to keep. Each runs on the fixes the previous ones
-  left, so the caller filters between one rule and the next. Step 6 also returns a
-  second mask, `True` on the first fix of each new segment: where the flight is split.
-- **Verdicts on a flight** (steps 2 and 5) return a dictionary with the measured
-  quantities and a flag, `gnss_ok` or `speed_ok`, that says whether the flight stays.
-  They never delete a fix.
+- **Rules on fixes** (`known_altitude` in step 2, steps 3 and 4 in `clean.py`, steps 6
+  and 7 in `excursion.py`) return a boolean mask, `True` for the fixes to keep. Each runs
+  on the fixes the previous ones left, so the caller filters between one rule and the
+  next. Steps 6 and 7 also return a second mask, `True` on the first fix of each new
+  segment: where the flight is split.
+- **Verdicts on a flight** (`altitude_channel` in step 2, step 5) return a dictionary
+  with the measured quantities and a flag, `gnss_ok` or `speed_ok`, that says whether
+  the flight stays. They never delete a fix.
 
-Steps 5 and 6 divide by the time between fixes, so they need the times the clock rule
+Steps 5, 6 and 7 divide by the time between fixes, so they need the times the clock rule
 leaves: strictly increasing.
 
 Before any step, `before_horizontal` also records in the row of each flight the sampling
@@ -74,6 +78,8 @@ a flight through the steps before each rule:
 [`before_horizontal`][xc_dynamics.preprocessing.flight.before_horizontal] stops before
 step 6, [`before_vertical`][xc_dynamics.preprocessing.flight.before_vertical] after it,
 and numbers in a column `segment` the pieces step 6 split the flight into.
+[`preprocess`][xc_dynamics.preprocessing.flight.preprocess] runs every step, and numbers
+the segments again after the splits of step 7: one column, whichever rule made the split.
 
 ## Thresholds
 
@@ -114,7 +120,10 @@ over every window of `excursion.window_s` seconds, from both altitude channels
 [`vertical_window_speeds`][xc_dynamics.preprocessing.altitude.vertical_window_speeds]).
 The barometer measures altitude independently of the GNSS, so its speed over windows
 shows real vertical motion, and `vertical.max_ms` is where that ends (thesis, section
-Vertical excursions).
+Vertical excursions). `scripts/preprocessing/vertical_counts.py` runs the rule on every
+flight and counts the fixes deleted and the splits; in the witness flights it also runs
+the rule on the pressure altitude, where what it removes is real flight, or an error both
+channels share.
 
 ## Adding a step
 

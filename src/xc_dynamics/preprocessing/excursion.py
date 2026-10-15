@@ -105,14 +105,15 @@ def horizontal_excursions(
 
 
 def vertical_excursions(
-    fixes: pd.DataFrame, max_ms: float, window_s: float
+    fixes: pd.DataFrame, max_ms: float, window_s: float, column: str = "gnss_alt"
 ) -> tuple[np.ndarray, np.ndarray]:
-    """The scan on the GNSS altitude, with the vertical distance, inside each segment. Two
-    masks over the fixes: keep, True for the fixes to keep, and split_before, True on the
-    first fix of every new segment the scan starts. The fixes are those before_vertical
-    returns: strictly increasing times, a GNSS altitude on every fix, a column segment."""
+    """The scan on an altitude, the GNSS one unless column names another, with the vertical
+    distance, inside each segment. Two masks over the fixes: keep, True for the fixes to
+    keep, and split_before, True on the first fix of every new segment the scan starts. The
+    fixes are those before_vertical returns, with strictly increasing times and a column
+    segment; the altitude must have a value on every fix."""
     t = fixes["t"].to_numpy()
-    z = fixes["gnss_alt"].to_numpy()
+    z = fixes[column].to_numpy()
     segment = fixes["segment"].to_numpy()
     keep = np.zeros(len(t), dtype=bool)
     split_before = np.zeros(len(t), dtype=bool)

@@ -128,6 +128,16 @@ def test_spiral_below_the_top_vertical_speed_is_untouched():
     assert keep.all() and not split_before.any()
 
 
+def test_the_rule_judges_the_altitude_column_it_is_given():
+    fixes = profile(climb(50))
+    fixes["baro_alt"] = climb(50)
+    fixes.loc[20, "baro_alt"] += 300  # a spike in the barometer only
+    keep, _ = vertical_excursions(fixes, MAX_MS, WINDOW_S)
+    assert keep.all()
+    keep, _ = vertical_excursions(fixes, MAX_MS, WINDOW_S, column="baro_alt")
+    assert list(np.flatnonzero(~keep)) == [20]
+
+
 def test_each_segment_is_scanned_on_its_own():
     # The horizontal scan already split the flight where the altitude jumps by 3 km.
     z = climb(60)
