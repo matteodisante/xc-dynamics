@@ -44,6 +44,7 @@ compiles on a machine without the data folder.
 | `figures/dataset/sampling-interval.pdf` | `dataset.py` | the share of the tracks per sampling interval | `chapters/dataset.tex` |
 | `figures/preprocessing/median-speed*.pdf` | `preprocessing.py` | the median speed of every flight, by discipline and by wing class | `chapters/preprocessing.tex` |
 | `figures/preprocessing/top-speed.pdf` | `preprocessing.py` | the speed of steps and over windows, by wing class | `chapters/preprocessing.tex` |
+| `figures/preprocessing/vertical-speed.pdf` | `preprocessing.py` | the vertical speed of steps and over windows from both altitude channels, the barometer by wing class | `chapters/preprocessing.tex` |
 | `figures/preprocessing/excursion-rule.pdf` | `preprocessing.py` | the excursion rule on two synthetic tracks; drawn without the data folder | `chapters/preprocessing.tex` |
 | `figures/preprocessing/excursion-real-flight.pdf` | `preprocessing.py` | real flight faster than the top speed, split or not; drawn without the data folder | `chapters/preprocessing.tex` |
 

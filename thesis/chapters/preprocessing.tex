@@ -304,3 +304,19 @@ that it deletes.}
 \section{Vertical excursions}
 \label{sec:vertical}
 \textcolor{red}{To be written.}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{generated/figures/preprocessing/vertical-speed}
+\caption{Absolute vertical speed in the flights kept by the previous steps whose
+barometer is a witness (Section~\ref{sec:altchannel}). Upper row: speed of the pressure
+altitude over windows of length $W=\SI{\cfgExcursionWindowS}{\second}$, for four wing
+classes of each discipline (Section~\ref{sec:glider}). Lower row, all classes together:
+speed of the GNSS and of the pressure altitude over single steps and over windows. Each
+curve is the share of its values per m/s, in bins of 1~m/s centred on whole values, on a
+logarithmic axis; values beyond the axis count in the share. Dashed line: the top
+vertical speed $v_{z,\max}$, \SI[per-mode=symbol]{\cfgVerticalMaxMsPara}{\metre\per\second}
+for paragliders and \SI[per-mode=symbol]{\cfgVerticalMaxMsHang}{\metre\per\second} for
+hang gliders.}
+\label{fig:vertical-speed}
+\end{figure}

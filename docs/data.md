@@ -13,7 +13,7 @@ not stored twice. Saved paths are relative to these folders, so the files stay v
 wherever the disk is mounted.
 
 !!! note "Sizes and examples"
-    Sizes are those of 14 October 2026: downloads and new runs change them. In the
+    Sizes are those of 15 October 2026: downloads and new runs change them. In the
     examples the personal fields (pilot, club, identifiers) are replaced by placeholders,
     since this site is public; everything else is copied from the files.
 
@@ -23,13 +23,13 @@ On the disk `SSD_DATA` (279 GiB, about half used), with the space each part take
 
 ```text
 SSD_DATA/
-├── paragliders/ffvl_cfd_igc/                 data folder, paragliders        369 MB
+├── paragliders/ffvl_cfd_igc/                 data folder, paragliders        370 MB
 │   ├── raw/raw_xml/<year>.xml                flight lists, one per season    170 MB
 │   ├── catalog/catalog.csv                   one row per flight               79 MB
-│   ├── derived/<area>/<result>/              results the thesis reads         38 MB
-│   └── scratch/<area>/<result>/              trials, same layout, never read   1 MB
-├── hang_gliders/delta_cfd_igc/               data folder, hang gliders        24 MB
-│   └── ...                                   same layout: lists 9 MB, catalog 3 MB, results 1 MB
+│   ├── derived/<area>/<result>/              results the thesis reads         39 MB
+│   └── scratch/<area>/<result>/              trials, same layout, never read   2 MB
+├── hang_gliders/delta_cfd_igc/               data folder, hang gliders        25 MB
+│   └── ...                                   same layout: lists 9 MB, catalog 3 MB, results 4.5 MB
 └── xc-viewer-data/
     ├── paragliders/raw/igc/<season>/<date>_<flight_id>.igc
     │                                         tracks folder: 186 052 tracks    72 GB
@@ -57,7 +57,7 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | `derived/preprocessing/speed_histograms/run.yaml` | `scripts/preprocessing/speed_histograms.py` | the record of the run | you, before the thesis uses the result |
 | `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the sampling interval of the track as read, the counters and verdicts of the steps before the excursion rule, the fixes the rule receives, and the fixes it deletes and the splits it makes with `excursion.window_s`, `excursion.window_short_s` and `excursion.window_long_s` | `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/excursion/run.yaml` | `scripts/preprocessing/excursion_counts.py` | the record of the run | you, before the thesis uses the result |
-| `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per m/s of absolute vertical speed, from the GNSS and from the pressure altitude, in the flights whose barometer is a witness | you, to choose the top vertical speed |
+| `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | for each wing class, the number of steps and of windows of `excursion.window_s` seconds per m/s of absolute vertical speed, from the GNSS and from the pressure altitude, in the flights whose barometer is a witness | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical_histograms/run.yaml` | `scripts/preprocessing/vertical_histograms.py` | the record of the run | you, before the thesis uses the result |
 
 What each file holds, column by column, is in [Formats](#formats).
@@ -230,12 +230,12 @@ The record of `excursion_counts.py` for paragliders:
 
 ```yaml
 command: scripts/preprocessing/excursion_counts.py para
-commit: f2c1febf8a7751b71f58347823ecc19879a740b2
+commit: 4229145dd4bcdd11d700bd4f2932ce43d69a11c5
 uncommitted_changes: false
 machine: HOST.local
 system: macOS-26.6.2-arm64-arm-64bit
 python: 3.12.13
-started: '2026-10-14T22:47:04+02:00'
+started: '2026-10-15T13:05:11+02:00'
 discipline: para
 root: /Volumes/SSD_DATA/paragliders/ffvl_cfd_igc
 tracks: /Volumes/SSD_DATA/xc-viewer-data/paragliders
@@ -246,6 +246,7 @@ thresholds:
     gnss_min_range_m: 30.0
     baro_witness_present_min: 0.95
     baro_witness_min_range_m: 30.0
+    baro_witness_range_tolerance: 0.1
   speed:
     max_kmh: 100.0
     median_max_kmh: 70.0
@@ -259,7 +260,7 @@ judged: 185321
 split: 1786
 split_short: 3858
 split_long: 833
-finished: '2026-10-14T23:08:19+02:00'
+finished: '2026-10-15T13:25:03+02:00'
 ```
 
 ## Files not used here

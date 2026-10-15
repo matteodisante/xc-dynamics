@@ -16,6 +16,14 @@ speed.max_kmh:
 
     top-speed.pdf                  window speed by wing class; steps against windows
 
+From derived/preprocessing/vertical_histograms/counts.npz
+(scripts/preprocessing/vertical_histograms.py), the vertical speed of steps and windows
+from both altitude channels, in the flights whose barometer is a witness, for
+vertical.max_ms:
+
+    vertical-speed.pdf             barometer window speed by wing class; both channels,
+                                   steps and windows
+
 From two synthetic tracks judged by the excursion rule itself, with excursion.window_s:
 
     excursion-rule.pdf             a block that comes back; a jump that does not
@@ -69,6 +77,11 @@ GROUP_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]  # one per group, in
 STEP_COLOR, WINDOW_COLOR = "#eb6834", "#2a78d6"
 REBIN = 5  # km/h per plotted bin; the saved bins are 1 km/h wide
 SPEED_RANGE = (40, 300)  # km/h shown
+
+# Vertical speed figure: same wing groups and colours as the top speed figure.
+VERTICAL_NPZ = Path("derived", "preprocessing", "vertical_histograms", "counts.npz")  # in the data folder
+GNSS_COLOR, BARO_COLOR = "#eb6834", "#2a78d6"
+VERTICAL_RANGE = (0, 80)  # m/s shown
 
 # Excursion table.
 EXCURSION_CSV = Path("derived", "preprocessing", "excursion", "flights.csv")  # in the data folder
@@ -169,6 +182,60 @@ def top_speed_figure(roots: dict, max_kmh: dict, window_s: float) -> None:
         axes[0, 0].set_ylabel(f"{window_s:g} s windows per km/h (share)")
         axes[1, 0].set_ylabel("values per km/h (share)")
         write(fig, "top-speed.pdf")
+
+
+def share_per_ms(counts: np.ndarray, edges: np.ndarray) -> np.ndarray:
+    """Share of all the values per m/s in each bin of the saved edges.
+
+    The last bin, up to infinity, counts in the total but is not drawn. Bins differ in
+    width (the first is half as wide), so each count is divided by its own. An empty bin is
+    NaN, so the log scale leaves a gap.
+    """
+    drawn = counts[:-1]
+    return np.where(drawn > 0, drawn / counts.sum() / np.diff(edges[:-1]), np.nan)
+
+
+def vertical_speed_figure(roots: dict, max_ms: dict, window_s: float) -> None:
+    """Barometer speed over windows of window_s seconds by wing group (upper row), and both
+    altitude channels on steps and on windows (lower row), one column per discipline."""
+    with plt.rc_context({"font.size": 8}):
+        fig, axes = plt.subplots(2, 2, figsize=(6.3, 5.4), sharex=True, sharey="row", layout="constrained")
+        for col, (d, root) in enumerate(roots.items()):
+            z = np.load(root / VERTICAL_NPZ)
+            edges = z["vertical_edges_ms"]
+            # The group of each wing class in the file, in the same order as its rows.
+            groups = np.array([GROUPS[d].get(c, "other") for c in z["wing_classes"]])
+
+            ax = axes[0, col]
+            for group, color in zip(TOP_SPEED_GROUPS[d], GROUP_COLORS):
+                baro = z["baro_windows"][groups == group].sum(0)  # all the classes of the group
+                ax.stairs(share_per_ms(baro, edges), edges[:-1], color=color, linewidth=1.2, label=group)
+            ax.set_title(LABEL[d])
+            ax.legend(frameon=False, title="wing class")
+
+            ax = axes[1, col]
+            curves = [  # array, colour, line style, label
+                ("gnss_steps", GNSS_COLOR, ":", "GNSS, steps"),
+                ("baro_steps", BARO_COLOR, ":", "barometer, steps"),
+                ("gnss_windows", GNSS_COLOR, "-", f"GNSS, {window_s:g} s windows"),
+                ("baro_windows", BARO_COLOR, "-", f"barometer, {window_s:g} s windows"),
+            ]
+            for name, color, style, label in curves:
+                ax.stairs(share_per_ms(z[name].sum(0), edges), edges[:-1], color=color, linestyle=style,
+                          linewidth=1.2, label=label)
+            ax.legend(frameon=False, title="all wing classes")
+            ax.set_xlabel("absolute vertical speed (m/s)")
+
+            for ax in axes[:, col]:
+                ax.axvline(max_ms[d], color=INK, linestyle="--", linewidth=0.8)
+                ax.set_yscale("log")
+                ax.set_xlim(*VERTICAL_RANGE)
+            # x in m/s, y as a fraction of the panel height.
+            axes[1, col].text(max_ms[d] + 1, 0.04, f"{max_ms[d]:g} m/s", color=INK,
+                              transform=axes[1, col].get_xaxis_transform())
+        axes[0, 0].set_ylabel(f"barometer, {window_s:g} s windows per m/s (share)")
+        axes[1, 0].set_ylabel("values per m/s (share)")
+        write(fig, "vertical-speed.pdf")
 
 
 def median_speed_figures(roots: dict, median_max_kmh: dict) -> None:
@@ -352,6 +419,10 @@ def main() -> None:
         top_speed_figure(roots, thresholds["speed"]["max_kmh"], thresholds["excursion"]["window_s"])
     else:
         print(f"{HISTOGRAMS_NPZ} missing: keeping the committed top-speed figure.")
+    if all((root / VERTICAL_NPZ).exists() for root in roots.values()):
+        vertical_speed_figure(roots, thresholds["vertical"]["max_ms"], thresholds["excursion"]["window_s"])
+    else:
+        print(f"{VERTICAL_NPZ} missing: keeping the committed vertical-speed figure.")
     if all((root / EXCURSION_CSV).exists() for root in roots.values()):
         excursion_table(roots, thresholds["excursion"])
     else:

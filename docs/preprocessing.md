@@ -105,6 +105,17 @@ runs the rule on every flight with W, half W (`excursion.window_short_s`) and tw
 shows that the output changes little across the three, and that W leaves recorders
 sampling every 10 s two fixes to come back. No step uses the other two windows.
 
+The top vertical speed, `vertical.max_ms`, is set per discipline like `speed.max_kmh`, for
+the GNSS altitude. It is read off the histograms of
+`scripts/preprocessing/vertical_histograms.py`, which count, in the flights whose
+barometer is a witness (`altitude.baro_witness_*`), the vertical speed of every step and
+over every window of `excursion.window_s` seconds, from both altitude channels
+([`vertical_speeds`][xc_dynamics.preprocessing.altitude.vertical_speeds],
+[`vertical_window_speeds`][xc_dynamics.preprocessing.altitude.vertical_window_speeds]).
+The barometer measures altitude independently of the GNSS, so its speed over windows
+shows real vertical motion, and `vertical.max_ms` is where that ends (thesis, section
+Vertical excursions).
+
 ## Adding a step
 
 1. Write the function in `src/xc_dynamics/preprocessing/` and its test in

@@ -22,3 +22,8 @@ excursion:  # horizontal excursions
   # Half and twice W, only to count how much the splits depend on W.
   window_short_s: 10.0
   window_long_s: 40.0
+
+vertical:  # vertical speed of the GNSS altitude between fixes
+  max_ms:  # top vertical speed of the discipline: a faster step is a recorder error
+    para: 30.0
+    hang: 20.0
