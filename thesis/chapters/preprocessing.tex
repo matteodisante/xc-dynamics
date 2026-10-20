@@ -7,20 +7,18 @@ delete single fixes, and the two excursion rules also split the flight; others j
 whole flight and keep or drop it. Each step answers one question about the recording:
 \begin{enumerate}
 \item \textbf{Reading the fixes} (Section~\ref{sec:parsing}). Each record of the file
-  becomes a fix with a time, a position and two altitudes, one from the barometer and
-  one from the GNSS receiver. Records that cannot be read are discarded; nothing else is
-  judged.
+  becomes a fix with a time, a 2D position and two altitudes, one from the barometer and
+  one from the GNSS receiver. Records that cannot be read are discarded.
 \item \textbf{Choice of altitude channel} (Section~\ref{sec:altchannel}). The analysis
   uses the GNSS altitude, so a flight whose GNSS altitude is mostly missing or never
   moves is dropped, and in the flights kept the few fixes without it are deleted. The
-  barometer is checked too: when it measures altitude, it serves as an independent
+  barometer presence is checked too because, when available, it serves as an independent
   witness of real vertical motion.
 \item \textbf{Clock} (Section~\ref{sec:clock}). Time must run forward: a fix that does
   not come after every fix before it is deleted.
 \item \textbf{Repeated positions} (Section~\ref{sec:repeated}). A recorder that stops
   updating repeats its last position; the copies are deleted.
-\item \textbf{Fast tracks} (Section~\ref{sec:fasttracks}). A free flight spends part of
-  its time climbing in thermals at a low ground speed, so a track whose typical speed is
+\item \textbf{Fast tracks} (Section~\ref{sec:fasttracks}). A track whose typical speed is
   too high is not a free flight, and is dropped.
 \item \textbf{Horizontal excursions} (Section~\ref{sec:excursions}). A fix the glider
   could not have reached at its top speed is a recorder error: it is deleted if the track
@@ -93,12 +91,9 @@ fixes without a three-dimensional GNSS solution, is kept but not used at this st
 \section{Choice of altitude channel}
 \label{sec:altchannel}
 
-Some recorders log no pressure altitude, so we use GNSS altitude for every flight,
-$z=h^{\mathrm{GNSS}}$. Its vertical datum is not uniform across recorders: the IGC
-specification prescribes height above the WGS84 ellipsoid~\cite{fai_igc_spec}, the
-CIVL specification for hang gliders and paragliders height above the
-geoid~\cite{fai_civl_s7h_2024}. A constant offset cancels in altitude increments, but
-comparing absolute altitudes across flights would need a datum audit.
+We prefere to use GNSS altitude over the barometric one because the former is 
+a more reliable absolute measure of the altitude above the seal level (ASL;
+Section~\ref{sec:frame} checks its datum). So, for every flight, $z=h^{\mathrm{GNSS}}$.
 
 Let $N$ be the number of fixes read from the file, before any is deleted, and $P$ the
 set of those with a GNSS altitude. The flight is kept only if
@@ -192,7 +187,7 @@ and the flight is kept if $\tilde v$ does not exceed
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhPara}{\kilo\metre\per\hour} for
 paragliders and
 \SI[per-mode=symbol]{\cfgSpeedMedianMaxKmhHang}{\kilo\metre\per\hour} for hang
-gliders. A flight with fewer than two fixes has no step and is kept. The rule deletes
+gliders. The rule deletes
 no fix, and the median is not moved by a few wrong steps, such as a position spike:
 those are left to the horizontal excursion rule (Section~\ref{sec:excursions}).
 
@@ -436,3 +431,106 @@ deletes.}
 \label{tab:vertical-excursions}
 \input{generated/tex/preprocessing-vertical}
 \end{table}
+
+\section{Local coordinates and vertical datum}
+\label{sec:frame}
+% Red numbers (\provisional): scratch datum audit of 2026-10-20, to be written as macros
+% by a script.
+
+The analysis works in local Cartesian coordinates: for every flight, $x$ east and $y$
+north of its first fix and $z$ the altitude, all in metres. This section fixes the
+reference surfaces behind them and checks, flight by flight, whether the GNSS altitude
+is a height above sea level.
+
+Latitude $\varphi$ and longitude $\lambda$ are geodetic coordinates on the WGS84
+ellipsoid: both specifications require it~\cite{fai_igc_spec,fai_civl_s7h_2024}, and
+every file that declares a horizontal datum declares WGS84. The datum of the GNSS
+altitude varies: the IGC specification prescribes the height above the WGS84
+ellipsoid~\cite{fai_igc_spec}, the CIVL specification for hang gliders and paragliders
+the height above the geoid~\cite{fai_civl_s7h_2024}. The height above the ellipsoid, $h$, and
+the height above the geoid, $H$, which lies close to mean sea level, differ by the geoid
+undulation $N$:
+\begin{equation}
+  h = H + N(\varphi,\lambda),
+  \label{eq:undulation}
+\end{equation}
+with $N$ between \provisional{43} and \provisional{\SI{57}{\metre}} over metropolitan
+France in the EGM2008 model~\cite{pavlis2012egm2008}. A file can declare its datum in
+the header \texttt{HFALG}, as \texttt{GEO} or \texttt{ELL}~\cite{fai_igc_spec}, but
+\provisional{\SI{73}{\percent}} of the tracks declare nothing, and some declarations are
+false: XC Tracer firmware versions that declare \texttt{ELL} record $H$, and XCTrack on
+some phones declares \texttt{GEO} and records $h$. The data show the datum actually used.
+Flights that start from the same place stand on the same ground, so their first
+altitudes should agree. We compared each flight with the flights of one large group,
+XCTrack with \texttt{GEO}, started within \provisional{\SI{25}{\metre}} of it; this is
+possible for \provisional{\SI{52}{\percent}} of the flights. Of these,
+\provisional{\SI{90}{\percent}} agree with the group, \provisional{\SI{2.4}{\percent}}
+are higher by $N$, and up to \provisional{\SI{3}{\percent}} are lower by $N$, as if the
+correction had been applied with the wrong sign.
+
+We place positions on the ellipsoid and heights on the geoid, as topographic maps do.
+\begin{itemize}
+\item \textbf{Horizontal.} Each fix is moved to the point of the ellipsoid below it,
+  $h=0$, converted to Earth-centred Cartesian coordinates,
+  \begin{equation}
+    (X,Y,Z)=\bigl(\nu\cos\varphi\cos\lambda,\ \nu\cos\varphi\sin\lambda,\
+    \nu(1-e^2)\sin\varphi\bigr),
+    \qquad \nu=\frac{a}{\sqrt{1-e^2\sin^2\varphi}},
+    \label{eq:ecef}
+  \end{equation}
+  with $a$ and $b$ the semi-axes of the WGS84 ellipsoid~\cite{fai_igc_spec} and
+  $e^2=1-b^2/a^2$, and rotated into the east and north directions of the first fix
+  $(\varphi_0,\lambda_0)$:
+  \begin{equation}
+    x=-\sin\lambda_0\,\Delta X+\cos\lambda_0\,\Delta Y,
+    \qquad
+    y=-\sin\varphi_0\cos\lambda_0\,\Delta X-\sin\varphi_0\sin\lambda_0\,\Delta Y
+      +\cos\varphi_0\,\Delta Z,
+    \label{eq:enu}
+  \end{equation}
+  where $\Delta X=X-X_0$, and likewise for $Y$ and $Z$, with $(X_0,Y_0,Z_0)$ the first
+  fix. The ellipsoid is the surface on which $\varphi$ and $\lambda$ are defined; a sphere
+  of radius $R=\SI{6371}{\kilo\metre}$ would stretch east--west and north--south
+  distances differently, by about \SI{0.3}{\percent} over France. With $h=0$, $x$ and $y$
+  depend on latitude and longitude only, so the datum of the altitude never enters them.
+  With the recorded altitude as $h$, a fix at distance $d$ from the origin would also
+  move outwards by $zd/R$: \SI{31}{\metre} for $z=\SI{2000}{\metre}$ at
+  $d=\SI{100}{\kilo\metre}$.
+\item \textbf{Vertical.} $z$ is the recorded GNSS altitude, a height above the geoid in
+  the flights that pass the check below. The terrain model, BD ALTI, IGN's RGE ALTI on a
+  \SI{25}{\metre} grid, gives the normal altitude of the ground, a height above sea level
+  in the French levelling systems: IGN69 on the mainland, IGN78 in
+  Corsica~\cite{ign_bdalti}. In those flights the height above the ground is $z-z_{\mathrm{t}}(\varphi,\lambda)$, with the terrain read at the latitude
+  and longitude that give $x$ and $y$. The third component of the rotation, the height above the plane
+  tangent at the first fix, is not used: it falls below the altitude by about $d^2/2R$,
+  \SI{785}{\metre} at $d=\SI{100}{\kilo\metre}$.
+\end{itemize}
+
+The check is made on the ground. In the stretch after the landing in which the glider
+stands still, its altitude should be that of the terrain. With $\Delta$ the median of
+$z-z_{\mathrm{t}}$ over this stretch, a flight gets the height above the ground if
+\begin{equation}
+  |\Delta|\leq w=\provisional{\SI{20}{\metre}}.
+  \label{eq:datum-check}
+\end{equation}
+The tolerance lies between the scatter of the GNSS altitude, since at a shared takeoff
+\provisional{three flights in four} start within \provisional{\SI{10}{\metre}} of the
+median altitude, and $N$: a file that records $h$, with $\Delta\approx N$, fails the
+check, and so does a flight without a still stretch after the landing. Geoid models and
+the zero of the French levelling network differ by much less than $w$: over metropolitan
+France, EGM96 and EGM2008 by at most \provisional{\SI{2.3}{\metre}}, NGF-IGN69 and
+EGM2008 by \provisional{0.1} to \provisional{\SI{1.1}{\metre}}. BD ALTI is accurate to
+0.2--\SI{0.7}{\metre} where it comes from LiDAR or aerial photographs, and to about
+\SI{7}{\metre} on the steep slopes of mountain areas~\cite{ign_bdalti}. The landing is
+used because landing fields are flat: a few metres of position error barely change the
+altitude read from the grid.
+
+BD ALTI covers metropolitan and overseas France only~\cite{ign_bdalti}: a flight that
+lands outside it cannot be checked, and a fix outside it has no terrain altitude.
+\provisional{\SI{3.4}{\percent}} of the paraglider flights and
+\provisional{\SI{4.7}{\percent}} of the hang-glider flights start or end outside it. No
+flight is dropped: every flight keeps $x$, $y$ and $z$ and stays in the analyses built
+on positions and altitude increments, since within a flight the datum does not change
+and $N$ changes by at most \provisional{\SI{21}{\centi\metre}} per kilometre. The
+analyses of the height above the ground, or of the altitude above sea level, use only
+the flights that pass Equation~\eqref{eq:datum-check}.
