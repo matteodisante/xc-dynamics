@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from xc_dynamics.preprocessing.airborne import airborne
 from xc_dynamics.preprocessing.altitude import altitude_channel, known_altitude
 from xc_dynamics.preprocessing.clean import increasing_time, moving_position
 from xc_dynamics.preprocessing.excursion import horizontal_excursions, vertical_excursions
@@ -81,14 +82,18 @@ def preprocess(
     max_kmh: float,
     window_s: float,
     max_ms: float,
+    min_kmh: float,
+    min_s: float,
 ) -> tuple[pd.DataFrame, dict]:
     """Run one IGC file through every step of the pre-processing; return the fixes kept,
     with a column segment that numbers from 0 the pieces the flight was split into, and the
-    row with the counters of every step.
+    row with the counters of every step, and the times t_takeoff and t_landing of the
+    first and last fix kept.
 
-    max_ms is the top vertical speed of the discipline (configs/preprocessing.yaml), the
-    other thresholds as in before_vertical. A flight dropped by a step is returned as that
-    step leaves it.
+    max_ms is the top vertical speed of the discipline, min_kmh and min_s the speed and
+    duration of the take-off and landing rule (configs/preprocessing.yaml), the other
+    thresholds as in before_vertical. A flight dropped by a step is returned as that step
+    leaves it: airborne_ok is False if no stretch of it is fast enough.
     """
     fixes, row = before_vertical(path, altitude, median_max_kmh, max_kmh, window_s)
     if not (row["gnss_ok"] and row["speed_ok"]):
@@ -100,4 +105,14 @@ def preprocess(
     segment = fixes["segment"].to_numpy() + split_before.cumsum()
     # A segment can lose all its fixes: factorize numbers those left from 0, without gaps.
     fixes = fixes[keep].assign(segment=pd.factorize(segment[keep])[0])
-    return fixes, row
+    keep = airborne(fixes, min_kmh, min_s)
+    row["airborne_ok"] = bool(keep.any())
+    if not row["airborne_ok"]:
+        return fixes, row
+    row["airborne_deleted"] = int((~keep).sum())
+    fixes = fixes[keep]
+    row["t_takeoff"], row["t_landing"] = float(fixes["t"].iloc[0]), float(fixes["t"].iloc[-1])
+    # A segment wholly before the take-off or after the landing has lost all its fixes, and
+    # its number is gone. Number the segments left from 0 again, so that none is missing:
+    # 1 1 2 2 becomes 0 0 1 1 when segment 0 was on the ground.
+    return fixes.assign(segment=pd.factorize(fixes["segment"])[0]), row

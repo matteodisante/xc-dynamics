@@ -8,6 +8,7 @@ ALTITUDE = dict(
     baro_witness_range_tolerance=0.1,
 )
 MEDIAN_MAX_KMH = 70.0
+PREPROCESS = dict(max_kmh=100.0, window_s=3.0, max_ms=30.0, min_kmh=15.0, min_s=20.0)
 
 
 def b(second, lat_milliminutes, gnss):
@@ -80,7 +81,27 @@ def test_vertical_excursions_delete_a_spike_and_split_at_a_jump(tmp_path):
     # at 10 s that comes back at 11 s, and jumps by 3000 m at 20 s for good.
     gnss = [1000 + 2 * s + 300 * (s == 10) + 3000 * (s >= 20) for s in range(30)]
     path = write(tmp_path, *(b(s, 30000 + 5 * s, z) for s, z in enumerate(gnss)))
-    fixes, row = preprocess(path, ALTITUDE, MEDIAN_MAX_KMH, max_kmh=100.0, window_s=3.0, max_ms=30.0)
+    fixes, row = preprocess(path, ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS)
     assert (row["vertical_deleted"], row["vertical_splits"]) == (1, 1)
     assert list(fixes.t) == [s for s in range(30) if s != 10]
     assert list(fixes.segment) == [0] * 19 + [1] * 10
+
+
+def ground_flight(tmp_path):
+    """10 s at 6.7 km/h, 30 s at 33 km/h climbing at 2 m/s, then 10 s at 6.7 km/h."""
+    lat = [30000 + s if s < 10 else 30009 + 5 * (s - 9) if s < 40 else 30159 + (s - 39) for s in range(50)]
+    z = [1000 + 2 * min(s, 40) for s in range(50)]
+    return write(tmp_path, *(b(s, la, h) for s, (la, h) in enumerate(zip(lat, z))))
+
+
+def test_ground_before_take_off_and_after_landing_is_deleted(tmp_path):
+    fixes, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS)
+    assert row["airborne_ok"] and row["airborne_deleted"] == 19
+    assert (row["t_takeoff"], row["t_landing"]) == (9, 39)
+    assert list(fixes.t) == list(range(9, 40))
+
+
+def test_flight_without_a_fast_stretch_is_dropped(tmp_path):
+    _, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(min_s=100.0))
+    assert not row["airborne_ok"]
+    assert "t_takeoff" not in row
