@@ -56,6 +56,7 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the sampling interval and the counters of steps 1 to 5, then the horizontal excursion rule with three windows | `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | per wing class, the steps and the windows of `excursion.window_s` per m/s of vertical speed, from both altitudes, in the witness flights | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical/flights.csv` | `scripts/preprocessing/vertical_counts.py` | one row per flight: the counters of steps 1 to 6, then the vertical excursion rule on the GNSS altitude and, in the witness flights, on the pressure altitude | `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/airborne/flights.csv` | `scripts/preprocessing/airborne_counts.py` | one row per flight: the counters of steps 1 to 7, then the take-off and landing rule: fixes deleted, times, longest slow stretch | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/<result>/run.yaml` | the script of the result | the record of the run | you, before the thesis uses the result |
 
 What each file holds, column by column, is in [Formats](#formats).
@@ -149,34 +150,38 @@ B 104400 4852956N 00026682W A 00048 00189
 
 `derived/preprocessing/speed/flights.csv`, written by `flight_speeds.py`,
 `derived/preprocessing/excursion/flights.csv`, written by `excursion_counts.py`, and
-`derived/preprocessing/vertical/flights.csv`, written by `vertical_counts.py`: one row per
+`derived/preprocessing/vertical/flights.csv`, written by `vertical_counts.py`, and
+`derived/preprocessing/airborne/flights.csv`, written by `airborne_counts.py`: one row per
 flight with a track, in the order of the catalog. All start with the columns of
 [`before_horizontal`][xc_dynamics.preprocessing.flight.before_horizontal], and each adds
 its own. A cell is empty when the flight stopped before the step that fills it, and an
 unreadable file gets only `flight_id` and `error`.
 
-| Column | Meaning | speed | excursion | vertical |
-|---|---|:-:|:-:|:-:|
-| `flight_id` | as in the catalog | ✓ | ✓ | ✓ |
-| `error` | why the file could not be read; the column exists only if some file could not | ✓ | ✓ | ✓ |
-| `fixes_read` | `B` records read | ✓ | ✓ | ✓ |
-| `sampling_s` | sampling interval of the track as read, s ([`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval]) | ✓ | ✓ | ✓ |
-| `gnss_present`, `baro_present` | share of the fixes read with a GNSS or a pressure altitude | ✓ | ✓ | ✓ |
-| `gnss_range_m`, `baro_range_m` | highest minus lowest altitude of that channel, m | ✓ | ✓ | ✓ |
-| `gnss_ok` | kept by the altitude channel | ✓ | ✓ | ✓ |
-| `baro_witness` | the barometer passes the same test, and its range is within `altitude.baro_witness_range_tolerance` of the GNSS range | ✓ | ✓ | ✓ |
-| `altitude_deleted` | fixes deleted because they have no GNSS altitude | ✓ | ✓ | ✓ |
-| `clock_deleted`, `repeated_deleted` | fixes deleted by the clock and the repeated-position rules | ✓ | ✓ | ✓ |
-| `median_kmh` | median step speed, km/h | ✓ | ✓ | ✓ |
-| `speed_ok` | kept by the fast-track rule | ✓ | ✓ | ✓ |
-| `steps`, `p90_kmh` | number of steps and 90th percentile of their speed, km/h | ✓ | | |
-| `horizontal_fixes` | fixes the horizontal excursion rule receives | | ✓ | |
-| `horizontal_deleted`, `horizontal_splits` | fixes it deletes and splits it makes with `excursion.window_s` | | ✓ | ✓ |
-| `short_deleted`, `short_splits` | the same with `excursion.window_short_s` | | ✓ | |
-| `long_deleted`, `long_splits` | the same with `excursion.window_long_s` | | ✓ | |
-| `vertical_fixes` | fixes the vertical excursion rule receives | | | ✓ |
-| `vertical_deleted`, `vertical_splits` | fixes it deletes and splits it makes on the GNSS altitude | | | ✓ |
-| `baro_fixes`, `baro_deleted`, `baro_splits` | the same on the pressure altitude, in the witness flights only | | | ✓ |
+| Column | Meaning | speed | excursion | vertical | airborne |
+|---|---|:-:|:-:|:-:|:-:|
+| `flight_id` | as in the catalog | ✓ | ✓ | ✓ | ✓ |
+| `error` | why the file could not be read; the column exists only if some file could not | ✓ | ✓ | ✓ | ✓ |
+| `fixes_read` | `B` records read | ✓ | ✓ | ✓ | ✓ |
+| `sampling_s` | sampling interval of the track as read, s ([`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval]) | ✓ | ✓ | ✓ | ✓ |
+| `gnss_present`, `baro_present` | share of the fixes read with a GNSS or a pressure altitude | ✓ | ✓ | ✓ | ✓ |
+| `gnss_range_m`, `baro_range_m` | highest minus lowest altitude of that channel, m | ✓ | ✓ | ✓ | ✓ |
+| `gnss_ok` | kept by the altitude channel | ✓ | ✓ | ✓ | ✓ |
+| `baro_witness` | the barometer passes the same test, and its range is within `altitude.baro_witness_range_tolerance` of the GNSS range | ✓ | ✓ | ✓ | ✓ |
+| `altitude_deleted` | fixes deleted because they have no GNSS altitude | ✓ | ✓ | ✓ | ✓ |
+| `clock_deleted`, `repeated_deleted` | fixes deleted by the clock and the repeated-position rules | ✓ | ✓ | ✓ | ✓ |
+| `median_kmh` | median step speed, km/h | ✓ | ✓ | ✓ | ✓ |
+| `speed_ok` | kept by the fast-track rule | ✓ | ✓ | ✓ | ✓ |
+| `steps`, `p90_kmh` | number of steps and 90th percentile of their speed, km/h | ✓ | | |  |
+| `horizontal_fixes` | fixes the horizontal excursion rule receives | | ✓ | |  |
+| `horizontal_deleted`, `horizontal_splits` | fixes it deletes and splits it makes with `excursion.window_s` | | ✓ | ✓ | ✓ |
+| `short_deleted`, `short_splits` | the same with `excursion.window_short_s` | | ✓ | |  |
+| `long_deleted`, `long_splits` | the same with `excursion.window_long_s` | | ✓ | |  |
+| `vertical_fixes` | fixes the vertical excursion rule receives | | | ✓ |  |
+| `vertical_deleted`, `vertical_splits` | fixes it deletes and splits it makes on the GNSS altitude | | | ✓ | ✓ |
+| `baro_fixes`, `baro_deleted`, `baro_splits` | the same on the pressure altitude, in the witness flights only | | | ✓ |  |
+| `airborne_ok`, `airborne_deleted` | kept by the take-off and landing rule; fixes it deletes | | | | ✓ |
+| `t_takeoff`, `t_landing` | time of the first and the last fix kept, s; only in the flights kept | | | | ✓ |
+| `longest_slow_s` | longest time between two steps faster than `airborne.min_kmh`, s; only in the flights kept | | | | ✓ |
 
 The start of `excursion/flights.csv`. The third flight fails the altitude channel and the
 fourth the fast-track rule, so the cells of the steps they do not reach are empty:

@@ -12,4 +12,6 @@
 
 ::: xc_dynamics.preprocessing.excursion
 
+::: xc_dynamics.preprocessing.airborne
+
 ::: xc_dynamics.preprocessing.flight
