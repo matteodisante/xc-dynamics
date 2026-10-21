@@ -25,6 +25,10 @@ whole flight and keep or drop it. Each step answers one question about the recor
   comes back soon after, and otherwise the flight is split where the track jumps.
 \item \textbf{Vertical excursions} (Section~\ref{sec:vertical}). The same rule on the
   GNSS altitude, with a top vertical speed read off the barometer.
+\item \textbf{Take-off and landing} (Section~\ref{sec:airborne}). The flight goes from
+  the first to the last stretch that is fast enough for long enough; the fixes on the
+  ground before and after are deleted, and a flight that stops flying for too long in
+  between is dropped.
 \end{enumerate}
 What comes out is a set of segments, pieces of the flight that no rule split, with a
 time, a position and an altitude on every fix. Table~\ref{tab:preproc-steps} sums up the
@@ -64,6 +68,11 @@ Section & Judges & Removes & Thresholds \\
   last fix accepted & fixes off the track; the flight is split where the track jumps &
   $v_{z,\max}=\cfgVerticalMaxMsPara\,/\,%
   \SI[per-mode=symbol]{\cfgVerticalMaxMsHang}{\metre\per\second}$, $W$ \\
+\ref{sec:airborne} Take-off and landing & the horizontal speed of each step & fixes before
+  the first and after the last fast stretch; the flight, if there is none or if it pauses
+  longer than $P_{\max}$ & faster than
+  \SI[per-mode=symbol]{\cfgAirborneMinKmh}{\kilo\metre\per\hour} for at least
+  \SI{\cfgAirborneMinS}{\second}, $P_{\max}=\SI{\cfgAirborneMaxPauseS}{\second}$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -396,12 +405,6 @@ gliders, whose fewer flights make the curves noisier and the reading coarser. Th
 threshold judges the flights without a witness: the vertical speed of real flight depends
 on the wing and on the air, which the recorder does not change.
 
-The barometer also checks the threshold. On the pressure altitude of the witness flights
-the rule deletes far fewer fixes and splits fewer flights than on the GNSS altitude
-(Table~\ref{tab:vertical-excursions}). There it can only remove real flight or an error
-the two channels share, so this bounds from above the real flight it removes from the
-GNSS altitude.
-
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{generated/figures/preprocessing/vertical-speed}
@@ -420,6 +423,12 @@ hang gliders.}
 \label{fig:vertical-speed}
 \end{figure}
 
+The barometer also checks the threshold. On the pressure altitude of the witness flights
+the rule deletes far fewer fixes and splits fewer flights than on the GNSS altitude
+(Table~\ref{tab:vertical-excursions}). There it can only remove real flight or an error
+the two channels share, so this bounds from above the real flight it removes from the
+GNSS altitude.
+
 \begin{table}[htbp]
 \centering\small
 \caption{The vertical excursion rule with the top vertical speed $v_{z,\max}$ and the
@@ -431,6 +440,42 @@ deletes.}
 \label{tab:vertical-excursions}
 \input{generated/tex/preprocessing-vertical}
 \end{table}
+
+\section{Take-off and landing}
+\label{sec:airborne}
+
+A recording starts before the take-off and ends after the landing: the recorder is on
+while the pilot walks to the launch, waits for the wind and packs the wing. These fixes
+are on the ground, and the analyses need the flight alone. Take the step speed $v_i$ of
+Equation~\eqref{eq:step-speed} inside a segment. A \emph{fast
+stretch} is a run of steps $a\leq i<b$ that are all faster than $v_{\min}$ and together
+last at least $T_{\min}$:
+\begin{equation}
+  v_i>v_{\min}\quad\text{for}\quad a\leq i<b,\qquad t_b-t_a\geq T_{\min}.
+  \label{eq:airborne}
+\end{equation}
+The flight goes from the first fix of the first fast stretch, the take-off, to the last
+fix of the last one, the landing. The fixes before and after are deleted, and the
+flight is dropped if it has no fast stretch. The times of the take-off and the landing
+are kept with the flight.
+
+We take $v_{\min}=\SI[per-mode=symbol]{\cfgAirborneMinKmh}{\kilo\metre\per\hour}$ and
+$T_{\min}=\SI{\cfgAirborneMinS}{\second}$, both set by hand. A person on foot goes at
+about \SI[per-mode=symbol]{5}{\kilo\metre\per\hour}, and the typical speed of a flight
+is far higher (Figure~\ref{fig:median-speed}), so $v_{\min}$ lies between the two. The
+duration leaves out a short burst of speed on the ground, such as the run at launch.
+
+The rule judges the two ends of the flight, so a stop in between needs a check of its own.
+Call \emph{pause} a time with no step faster than $v_{\min}$, before the first fast step
+of the flight, between two, or after the last. A landing on a hill followed by a second
+take-off is a pause, and so is the wait before a ride in a vehicle after the landing,
+when the recorder is left on: the rule reads the ride as a last fast stretch and places
+the landing at its end. The flight is dropped if its longest pause exceeds
+$P_{\max}=\SI{\cfgAirborneMaxPauseS}{\second}$, set by hand. A stretch is judged by its
+duration, so one step longer than $T_{\min}$ and faster than $v_{\min}$, across a gap in
+the recording, is a fast stretch by itself; the wait that follows it is a pause.
+
+\textcolor{red}{Counts of the rule and of these cases: to be added after the full run.}
 
 \section{Local coordinates and vertical datum}
 \label{sec:frame}
