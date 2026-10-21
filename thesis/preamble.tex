@@ -18,6 +18,15 @@
 % singlelinecheck=false: the one-line test of long captions overflows TeX's dimensions.
 \usepackage[singlelinecheck=false]{caption}
 \captionsetup{font=small, labelfont=bf, labelsep=period}
+
+% Looser float limits: figures and tables stay near their citation without leaving gaps.
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.7}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.7}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
