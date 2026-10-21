@@ -87,8 +87,8 @@ def preprocess(
 ) -> tuple[pd.DataFrame, dict]:
     """Run one IGC file through every step of the pre-processing; return the fixes kept,
     with a column segment that numbers from 0 the pieces the flight was split into, and the
-    row with the counters of every step, and the times t_takeoff and t_landing of the
-    first and last fix kept.
+    row with the counters of every step, the times t_takeoff and t_landing of the first and
+    last fix kept, and the seconds ground_before_s and ground_after_s cut before and after.
 
     max_ms is the top vertical speed of the discipline, min_kmh and min_s the speed and
     duration of the take-off and landing rule (configs/preprocessing.yaml), the other
@@ -110,8 +110,12 @@ def preprocess(
     if not row["airborne_ok"]:
         return fixes, row
     row["airborne_deleted"] = int((~keep).sum())
+    t_first, t_last = float(fixes["t"].iloc[0]), float(fixes["t"].iloc[-1])
     fixes = fixes[keep]
     row["t_takeoff"], row["t_landing"] = float(fixes["t"].iloc[0]), float(fixes["t"].iloc[-1])
+    # The time cut before the take-off and after the landing.
+    row["ground_before_s"] = row["t_takeoff"] - t_first
+    row["ground_after_s"] = t_last - row["t_landing"]
     # A segment wholly before the take-off or after the landing has lost all its fixes, and
     # its number is gone. Number the segments left from 0 again, so that none is missing:
     # 1 1 2 2 becomes 0 0 1 1 when segment 0 was on the ground.

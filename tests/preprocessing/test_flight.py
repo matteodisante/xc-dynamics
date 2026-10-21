@@ -98,6 +98,7 @@ def test_ground_before_take_off_and_after_landing_is_deleted(tmp_path):
     fixes, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS)
     assert row["airborne_ok"] and row["airborne_deleted"] == 19
     assert (row["t_takeoff"], row["t_landing"]) == (9, 39)
+    assert (row["ground_before_s"], row["ground_after_s"]) == (9, 10)
     assert list(fixes.t) == list(range(9, 40))
 
 

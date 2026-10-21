@@ -1,5 +1,6 @@
-"""Fixes deleted by the take-off and landing rule in every flight, and the longest slow
-stretch left inside the flight (airborne.min_kmh, airborne.min_s).
+"""Fixes deleted by the take-off and landing rule in every flight, the time cut before the
+take-off and after the landing, and the longest slow stretch left inside the flight
+(airborne.min_kmh, airborne.min_s).
 
 Each flight with a track goes through the whole pre-processing (preprocess). The rule
 deletes the fixes before the first and after the last stretch faster than min_kmh for

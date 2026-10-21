@@ -181,6 +181,7 @@ unreadable file gets only `flight_id` and `error`.
 | `baro_fixes`, `baro_deleted`, `baro_splits` | the same on the pressure altitude, in the witness flights only | | | ✓ |  |
 | `airborne_ok`, `airborne_deleted` | kept by the take-off and landing rule; fixes it deletes | | | | ✓ |
 | `t_takeoff`, `t_landing` | time of the first and the last fix kept, s; only in the flights kept | | | | ✓ |
+| `ground_before_s`, `ground_after_s` | time cut before the take-off and after the landing, s; only in the flights kept | | | | ✓ |
 | `longest_slow_s` | longest time between two steps faster than `airborne.min_kmh`, s; only in the flights kept | | | | ✓ |
 
 The start of `excursion/flights.csv`. The third flight fails the altitude channel and the
