@@ -56,7 +56,7 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | `derived/preprocessing/excursion/flights.csv` | `scripts/preprocessing/excursion_counts.py` | one row per flight: the sampling interval and the counters of steps 1 to 5, then the horizontal excursion rule with three windows | `thesis/scripts/dataset.py`, `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | per wing class, the steps and the windows of `excursion.window_s` per m/s of vertical speed, from both altitudes, in the witness flights | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical/flights.csv` | `scripts/preprocessing/vertical_counts.py` | one row per flight: the counters of steps 1 to 6, then the vertical excursion rule on the GNSS altitude and, in the witness flights, on the pressure altitude | `thesis/scripts/preprocessing.py` |
-| `derived/preprocessing/airborne/flights.csv` | `scripts/preprocessing/airborne_counts.py` | one row per flight: the counters of steps 1 to 7, then the take-off and landing rule: fixes deleted, times, longest slow stretch | `thesis/scripts/preprocessing.py` |
+| `derived/preprocessing/airborne/flights.csv` | `scripts/preprocessing/airborne_counts.py` | one row per flight: the counters of steps 1 to 7, then the take-off and landing rule: fixes deleted, times, longest pause | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/<result>/run.yaml` | the script of the result | the record of the run | you, before the thesis uses the result |
 
 What each file holds, column by column, is in [Formats](#formats).
@@ -182,7 +182,7 @@ unreadable file gets only `flight_id` and `error`.
 | `airborne_ok`, `airborne_deleted` | kept by the take-off and landing rule; fixes it deletes | | | | ✓ |
 | `t_takeoff`, `t_landing` | time of the first and the last fix kept, s; only in the flights kept | | | | ✓ |
 | `ground_before_s`, `ground_after_s` | time cut before the take-off and after the landing, s; only in the flights kept | | | | ✓ |
-| `longest_slow_s` | longest time between two steps faster than `airborne.min_kmh`, s; only in the flights kept | | | | ✓ |
+| `longest_pause_s` | longest time without a step faster than `airborne.min_kmh` between take-off and landing, s; a flight above `airborne.max_pause_s` is dropped | | | | ✓ |
 
 The start of `excursion/flights.csv`. The third flight fails the altitude channel and the
 fourth the fast-track rule, so the cells of the steps they do not reach are empty:

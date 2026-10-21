@@ -40,7 +40,7 @@ flowchart TD
 | 5 · Fast tracks | drops the flight if its median step speed is too high | [`track_speed`][xc_dynamics.preprocessing.speed.track_speed], on [`step_speed`][xc_dynamics.preprocessing.speed.step_speed] | `speed.median_max_kmh` |
 | 6 · Horizontal excursions | deletes the fixes the glider could not reach, when the track comes back within W; otherwise splits the flight | [`horizontal_excursions`][xc_dynamics.preprocessing.excursion.horizontal_excursions] | `speed.max_kmh`, `excursion.window_s` |
 | 7 · Vertical excursions | the same on the GNSS altitude, inside each segment | [`vertical_excursions`][xc_dynamics.preprocessing.excursion.vertical_excursions] | `vertical.max_ms`, `excursion.window_s` |
-| 8 · Take-off and landing | deletes the fixes before the first and after the last stretch faster than `min_kmh` for `min_s`; drops the flight if there is none; records `t_takeoff` and `t_landing` | [`airborne`][xc_dynamics.preprocessing.airborne.airborne] | `airborne.min_kmh`, `airborne.min_s` |
+| 8 · Take-off and landing | deletes the fixes before the first and after the last stretch faster than `min_kmh` for `min_s`; drops the flight if there is none, or if it has no fast step for longer than `max_pause_s` in between; records `t_takeoff` and `t_landing` | [`airborne_span`][xc_dynamics.preprocessing.airborne.airborne_span], [`longest_pause`][xc_dynamics.preprocessing.airborne.longest_pause] | `airborne.*` |
 
 The modules are in
 [`src/xc_dynamics/preprocessing/`](https://github.com/matteodisante/xc-dynamics/tree/main/src/xc_dynamics/preprocessing),
@@ -53,7 +53,7 @@ their tests in `tests/preprocessing/`.
   first fix of each new segment. A verdict on a flight (`altitude_channel`, step 5)
   returns the quantities it measured and a flag, `gnss_ok` or `speed_ok`, and deletes no
   fix. Step 8 is both: it deletes the fixes on the ground and sets `airborne_ok`, False
-  when no fix is left.
+  when no stretch is fast enough or the pause is too long.
 - **Order.** Each rule runs on the fixes the previous ones left. Steps 5 to 7 divide by
   the time between fixes, so they need the strictly increasing times the clock rule
   leaves.
@@ -84,7 +84,7 @@ value: the thesis section of its step.
 | `speed.max_kmh` | 6 | the ground speed over windows of W ([`window_speed`][xc_dynamics.preprocessing.speed.window_speed]), by wing class | `speed_histograms.py` → figure top-speed |
 | `excursion.window_s`, W | 6, 7 | set by hand, checked with half and twice W (`window_short_s`, `window_long_s`, used by no step) | `excursion_counts.py` → excursion table |
 | `vertical.max_ms` | 7 | the vertical speed of the barometer over windows of W, in the flights whose barometer is a witness ([`vertical_speeds`][xc_dynamics.preprocessing.altitude.vertical_speeds], [`vertical_window_speeds`][xc_dynamics.preprocessing.altitude.vertical_window_speeds]) | `vertical_histograms.py` → figure vertical-speed; checked by `vertical_counts.py` → vertical table |
-| `airborne.min_kmh`, `airborne.min_s` | 8 | set by hand: above a walking pace, below any flight | `airborne_counts.py` |
+| `airborne.min_kmh`, `airborne.min_s`, `airborne.max_pause_s` | 8 | set by hand | `airborne_counts.py` |
 
 ## Adding a step
 
