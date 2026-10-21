@@ -1,12 +1,12 @@
-"""Fixes deleted by the take-off and landing rule in every flight, the time cut before the
-take-off and after the landing, and the longest slow stretch left inside the flight
-(airborne.min_kmh, airborne.min_s).
+"""What the take-off and landing rule does in every flight: fixes deleted, the time cut
+before the take-off and after the landing, and the longest pause between them
+(airborne.*).
 
 Each flight with a track goes through the whole pre-processing (preprocess). The rule
-deletes the fixes before the first and after the last stretch faster than min_kmh for
-min_s; a flight without such a stretch is dropped (airborne_ok False). A slow stretch
-inside the flight is kept, so longest_slow_s, the longest time between two fast steps,
-shows the flights that stop or land in the middle.
+deletes the fixes before the first and after the last stretch faster than
+airborne.min_kmh for airborne.min_s, and drops the flight (airborne_ok False) if it has no
+such stretch or if its longest_pause_s, the longest time without a fast step between
+take-off and landing, exceeds airborne.max_pause_s.
 
     uv run python scripts/preprocessing/airborne_counts.py para
     uv run python scripts/preprocessing/airborne_counts.py hang --sample 200
@@ -23,7 +23,6 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import yaml
 from tqdm import tqdm
@@ -31,24 +30,17 @@ from tqdm import tqdm
 from xc_dynamics.common.provenance import now, run_record
 from xc_dynamics.download import ffvl
 from xc_dynamics.preprocessing.flight import preprocess
-from xc_dynamics.preprocessing.speed import step_speed
 
 REPO = Path(__file__).resolve().parents[2]
 CONFIGS = REPO / "configs"
 
 
 def one_flight(local_path: str, tracks: Path, altitude: dict, **thresholds) -> dict:
-    """The counters of the steps of one flight, and, in a flight kept, the longest time in
-    seconds between two steps faster than min_kmh."""
+    """The counters of the steps of one flight."""
     try:
-        fixes, row = preprocess(tracks / local_path, altitude, **thresholds)
+        _, row = preprocess(tracks / local_path, altitude, **thresholds)
     except Exception as err:  # one broken file must not stop a run over the whole archive
         return {"error": f"{type(err).__name__}: {err}"}
-    if row.get("airborne_ok"):
-        t = fixes["t"].to_numpy()
-        fast = np.flatnonzero(step_speed(fixes) > thresholds["min_kmh"])
-        # Between step k and the next fast step j, the slow time goes from fix k+1 to fix j.
-        row["longest_slow_s"] = float((t[fast[1:]] - t[fast[:-1] + 1]).max(initial=0.0))
     return row
 
 
@@ -72,8 +64,7 @@ def main() -> None:
         "max_kmh": config["speed"]["max_kmh"][args.discipline],
         "window_s": config["excursion"]["window_s"],
         "max_ms": config["vertical"]["max_ms"][args.discipline],
-        "min_kmh": config["airborne"]["min_kmh"],
-        "min_s": config["airborne"]["min_s"],
+        "airborne": config["airborne"],
     }
     root = args.root or Path(settings["root"])
     tracks = args.tracks or Path(settings["tracks"])

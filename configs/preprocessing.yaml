@@ -31,3 +31,4 @@ vertical:  # vertical speed of the GNSS altitude between fixes
 airborne:  # take-off and landing: the flight is the span of the fast stretches
   min_kmh: 15.0  # above a walking pace, below any flight
   min_s: 30.0  # a stretch faster than min_kmh must last this long
+  max_pause_s: 300.0  # a longer stop between take-off and landing drops the flight

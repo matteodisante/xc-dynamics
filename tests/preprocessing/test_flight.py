@@ -8,7 +8,8 @@ ALTITUDE = dict(
     baro_witness_range_tolerance=0.1,
 )
 MEDIAN_MAX_KMH = 70.0
-PREPROCESS = dict(max_kmh=100.0, window_s=3.0, max_ms=30.0, min_kmh=15.0, min_s=20.0)
+AIRBORNE = dict(min_kmh=15.0, min_s=20.0, max_pause_s=300.0)
+PREPROCESS = dict(max_kmh=100.0, window_s=3.0, max_ms=30.0, airborne=AIRBORNE)
 
 
 def b(second, lat_milliminutes, gnss):
@@ -103,6 +104,26 @@ def test_ground_before_take_off_and_after_landing_is_deleted(tmp_path):
 
 
 def test_flight_without_a_fast_stretch_is_dropped(tmp_path):
-    _, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(min_s=100.0))
+    _, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(airborne=AIRBORNE | dict(min_s=100.0)))
     assert not row["airborne_ok"]
+    assert "t_takeoff" not in row
+
+
+def flight_with_a_stop(tmp_path):
+    """33 km/h for 14 s, 6.7 km/h for 25 s, then 33 km/h again, climbing at 2 m/s."""
+    lat = [30000 + 5 * s if s < 15 else 30070 + (s - 14) if s < 40 else 30095 + 5 * (s - 39) for s in range(60)]
+    return write(tmp_path, *(b(s, la, 1000 + 2 * s) for s, la in enumerate(lat)))
+
+
+def test_stop_inside_the_flight_is_kept_if_short(tmp_path):
+    fixes, row = preprocess(flight_with_a_stop(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(airborne=AIRBORNE | dict(min_s=10.0)))
+    assert row["airborne_ok"] and row["longest_pause_s"] == 25
+    assert len(fixes) == 60
+
+
+def test_long_pause_drops_the_flight(tmp_path):
+    airborne = AIRBORNE | dict(min_s=10.0, max_pause_s=20.0)
+    _, row = preprocess(flight_with_a_stop(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(airborne=airborne))
+    assert not row["airborne_ok"]
+    assert row["longest_pause_s"] == 25
     assert "t_takeoff" not in row
