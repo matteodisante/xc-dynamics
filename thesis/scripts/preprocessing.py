@@ -41,6 +41,12 @@ and, in the witness flights, on the pressure altitude, in thesis/generated/tex/:
 
     preprocessing-vertical.tex     body of the table, one row per discipline and altitude
 
+From derived/preprocessing/airborne/flights.csv (scripts/preprocessing/airborne_counts.py),
+the flights the take-off and landing rule drops, the fixes it deletes and the time it cuts
+at each end, in thesis/generated/tex/:
+
+    preprocessing-airborne.tex     body of the table, one row per discipline
+
 A figure or table whose results are not on disk keeps its committed file.
 
     uv run python thesis/scripts/preprocessing.py
@@ -92,6 +98,7 @@ VERTICAL_RANGE = (0, 80)  # m/s shown
 # Excursion tables.
 EXCURSION_CSV = Path("derived", "preprocessing", "excursion", "flights.csv")  # in the data folder
 VERTICAL_CSV = Path("derived", "preprocessing", "vertical", "flights.csv")  # in the data folder
+AIRBORNE_CSV = Path("derived", "preprocessing", "airborne", "flights.csv")  # in the data folder
 TEX = REPO / "thesis" / "generated" / "tex"
 
 # Excursion rule figure: synthetic tracks along one coordinate, judged by the rule itself.
@@ -434,6 +441,47 @@ def vertical_table(roots: dict) -> None:
     print(f"Wrote {TEX / 'preprocessing-vertical.tex'}")
 
 
+def airborne_table(roots: dict) -> None:
+    """Body of the take-off and landing table: for each discipline, the flights that reach
+    the rule, the shares dropped for having no fast stretch and for a pause above
+    airborne.max_pause_s, the share of fixes deleted in the flights kept and the median and
+    90th percentile of the time cut before the take-off and after the landing."""
+    lines = [
+        "% Written by thesis/scripts/preprocessing.py: do not edit.\n",
+        "\\begin{tabular}{@{}lrrrrrrrr@{}}\n",
+        "\\toprule\n",
+        "& Flights & \\multicolumn{2}{c}{Dropped (\\%)} & Fixes deleted (\\%) "
+        "& \\multicolumn{2}{c}{Cut before (s)} & \\multicolumn{2}{c}{Cut after (s)} \\\\\n",
+        "\\cmidrule(lr){3-4}\\cmidrule(lr){6-7}\\cmidrule(l){8-9}\n",
+        "& & No stretch & Pause & & Median & 90\\% & Median & 90\\% \\\\\n",
+        "\\midrule\n",
+    ]
+    for d, root in roots.items():
+        # Only the flights that reached the rule: the others have no airborne_ok.
+        f = pd.read_csv(root / AIRBORNE_CSV).dropna(subset=["airborne_ok"])
+        dropped = f.airborne_ok.eq(False)
+        # A flight with no fast stretch has no pause; one dropped for its pause has one.
+        no_stretch = 100 * (dropped & f.longest_pause_s.isna()).mean()
+        long_pause = 100 * (dropped & f.longest_pause_s.notna()).mean()
+        kept = f[f.airborne_ok.eq(True)]
+        # The fixes the rule receives: those read, minus those the earlier steps deleted.
+        earlier = ["altitude_deleted", "clock_deleted", "repeated_deleted",
+                   "horizontal_deleted", "vertical_deleted"]
+        received = kept.fixes_read - kept[earlier].sum(axis=1)
+        deleted = 100 * kept.airborne_deleted.sum() / received.sum()
+        # Median and 90th percentile: the gap between them shows the long tail.
+        cut = [kept[c].quantile(q)
+               for c in ("ground_before_s", "ground_after_s") for q in (0.5, 0.9)]
+        lines.append(
+            f"{LABEL[d]} & \\num{{{len(f)}}} & {no_stretch:.2f} & {long_pause:.2f} & {deleted:.2f} "
+            + "".join(f"& {c:.0f} " for c in cut) + "\\\\\n"
+        )
+    lines += ["\\bottomrule\n", "\\end{tabular}\n"]
+    TEX.mkdir(parents=True, exist_ok=True)
+    (TEX / "preprocessing-airborne.tex").write_text("".join(lines))
+    print(f"Wrote {TEX / 'preprocessing-airborne.tex'}")
+
+
 def main() -> None:
     config = yaml.safe_load((REPO / "configs" / "download.yaml").read_text(encoding="utf-8"))
     thresholds = yaml.safe_load((REPO / "configs" / "preprocessing.yaml").read_text(encoding="utf-8"))
@@ -466,6 +514,10 @@ def main() -> None:
         vertical_table(roots)
     else:
         print(f"{VERTICAL_CSV} missing: keeping the committed vertical excursion table.")
+    if all((root / AIRBORNE_CSV).exists() for root in roots.values()):
+        airborne_table(roots)
+    else:
+        print(f"{AIRBORNE_CSV} missing: keeping the committed take-off and landing table.")
 
 
 if __name__ == "__main__":

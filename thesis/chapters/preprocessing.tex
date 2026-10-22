@@ -463,19 +463,43 @@ We take $v_{\min}=\SI[per-mode=symbol]{\cfgAirborneMinKmh}{\kilo\metre\per\hour}
 $T_{\min}=\SI{\cfgAirborneMinS}{\second}$, both set by hand. A person on foot goes at
 about \SI[per-mode=symbol]{5}{\kilo\metre\per\hour}, and the typical speed of a flight
 is far higher (Figure~\ref{fig:median-speed}), so $v_{\min}$ lies between the two. The
-duration leaves out a short burst of speed on the ground, such as the run at launch.
+duration leaves out a short burst of speed on the ground, such as a launch run that is called off.
 
-The rule judges the two ends of the flight, so a stop in between needs a check of its own.
-Call \emph{pause} a time with no step faster than $v_{\min}$, before the first fast step
-of the flight, between two, or after the last. A landing on a hill followed by a second
-take-off is a pause, and so is the wait before a ride in a vehicle after the landing,
-when the recorder is left on: the rule reads the ride as a last fast stretch and places
-the landing at its end. The flight is dropped if its longest pause exceeds
-$P_{\max}=\SI{\cfgAirborneMaxPauseS}{\second}$, set by hand. A stretch is judged by its
-duration, so one step longer than $T_{\min}$ and faster than $v_{\min}$, across a gap in
-the recording, is a fast stretch by itself; the wait that follows it is a pause.
+The take-off and the landing depend only on the first and the last fast stretch, so a stop
+between them needs a check of its own. Call \emph{pause} a time interval of the flight with no step faster
+than $v_{\min}$. A long pause means that the span from take-off to landing is not one
+flight. It arises in three cases:
+\begin{itemize}
+\item \textbf{Second take-off.} The pilot lands on a hill and takes off again. The time on
+  the hill is a pause.
+\item \textbf{Ride in a vehicle.} The pilot lands, waits, then leaves by car with the
+  recorder on. The ride is a fast stretch, so the landing is placed at its end and the
+  wait is a pause.
+\item \textbf{Hole in the recording.} The recorder stops while the pilot drives to the
+  launch. The step across the hole is a fast stretch, so the take-off is placed before
+  it and the wait at the launch is a pause. A hole on the drive back from the landing
+  places the landing after it in the same way.
+\end{itemize}
+To keep these stops out of the data, a flight is dropped if its longest pause exceeds
+$P_{\max}=\SI{\cfgAirborneMaxPauseS}{\second}$, set by hand.
 
-\textcolor{red}{Counts of the rule and of these cases: to be added after the full run.}
+We take $P_{\max}$ large, so that only a clear stop drops a flight. Table~\ref{tab:airborne}
+gives, for each discipline, the share of flights the take-off and landing rule drops and
+why, the share of fixes it deletes in the flights kept, and the time it cuts before the
+take-off and after the landing.
+
+\begin{table}[htbp]
+\centering\small
+\caption{The take-off and landing rule with $v_{\min}$, $T_{\min}$ and $P_{\max}$ as above,
+in the flights kept by the previous steps. Dropped: share of the flights dropped, for having
+no fast stretch (No stretch) and for a longest pause above $P_{\max}$ (Pause); most are
+dropped for their pause. Fixes deleted: fixes before the take-off and after the landing, as a share of all the
+fixes of the flights kept as they reach this rule. Cut before: seconds from the first fix of the recording to the take-off. Cut after:
+seconds from the landing to the last fix. Both are given in the flights kept, as median and
+90th percentile.}
+\label{tab:airborne}
+\input{generated/tex/preprocessing-airborne}
+\end{table}
 
 \section{Local coordinates and vertical datum}
 \label{sec:frame}
