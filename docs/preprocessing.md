@@ -18,14 +18,16 @@ flowchart TD
     exc["6 · Horizontal excursions"]
     vert["7 · Vertical excursions"]
     air["8 · Take-off and landing"]
-    todo["9 onwards, not written yet:<br>segments and grid, population,<br>local coordinates"]
+    samp["9 · Sampling interval"]
+    todo["10 onwards, not written yet:<br>segments and grid, population,<br>local coordinates"]
     out[("clean trajectory")]
     drop(["flight dropped"])
 
-    igc --> read --> alt --> clock --> rep --> speed --> exc --> vert --> air --> todo --> out
+    igc --> read --> alt --> clock --> rep --> speed --> exc --> vert --> air --> samp --> todo --> out
     alt -->|"gnss_ok is false"| drop
     speed -->|"speed_ok is false"| drop
     air -->|"airborne_ok is false"| drop
+    samp -->|"sampling_ok is false"| drop
 
     classDef pending stroke-dasharray: 5 5
     class todo pending
@@ -41,6 +43,7 @@ flowchart TD
 | 6 · Horizontal excursions | deletes the fixes the glider could not reach, when the track comes back within W; otherwise splits the flight | [`horizontal_excursions`][xc_dynamics.preprocessing.excursion.horizontal_excursions] | `speed.max_kmh`, `excursion.window_s` |
 | 7 · Vertical excursions | the same on the GNSS altitude, inside each segment | [`vertical_excursions`][xc_dynamics.preprocessing.excursion.vertical_excursions] | `vertical.max_ms`, `excursion.window_s` |
 | 8 · Take-off and landing | deletes the fixes before the first and after the last stretch faster than `min_kmh` for `min_s`; drops the flight if there is none, or if it has no fast step for longer than `max_pause_s` in between; records `t_takeoff` and `t_landing` | [`airborne_span`][xc_dynamics.preprocessing.airborne.airborne_span], [`longest_pause`][xc_dynamics.preprocessing.airborne.longest_pause] | `airborne.*` |
+| 9 · Sampling interval | drops the flight if the sampling interval of its track, measured as read, is longer than `max_s` | [`preprocess`][xc_dynamics.preprocessing.flight.preprocess], on [`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval] | `sampling.max_s` |
 
 The modules are in
 [`src/xc_dynamics/preprocessing/`](https://github.com/matteodisante/xc-dynamics/tree/main/src/xc_dynamics/preprocessing),
@@ -50,9 +53,9 @@ their tests in `tests/preprocessing/`.
 
 - **Two kinds of step.** A rule on fixes (`known_altitude`, steps 3, 4, 6, 7 and 8) returns
   a mask, `True` for the fixes to keep; the excursion rules also return a mask of the
-  first fix of each new segment. A verdict on a flight (`altitude_channel`, step 5)
-  returns the quantities it measured and a flag, `gnss_ok` or `speed_ok`, and deletes no
-  fix. Step 8 is both: it deletes the fixes on the ground and sets `airborne_ok`, False
+  first fix of each new segment. A verdict on a flight (`altitude_channel`, step 5, and
+  step 9) returns the quantities it measured and a flag, `gnss_ok`, `speed_ok` or
+  `sampling_ok`, and deletes no fix. Step 8 is both: it deletes the fixes on the ground and sets `airborne_ok`, False
   when no stretch is fast enough or the pause is too long.
 - **Order.** Each rule runs on the fixes the previous ones left. Steps 5 to 7 divide by
   the time between fixes, so they need the strictly increasing times the clock rule
@@ -67,7 +70,7 @@ their tests in `tests/preprocessing/`.
   receive.
 - **Sampling interval.** `before_horizontal` also records the sampling interval of the
   track as read ([`sampling_interval`][xc_dynamics.preprocessing.sampling.sampling_interval]),
-  shown in the dataset chapter; no step uses it.
+  shown in the dataset chapter and used by step 9.
 
 ## Thresholds
 
@@ -85,6 +88,7 @@ value: the thesis section of its step.
 | `excursion.window_s`, W | 6, 7 | set by hand, checked with half and twice W (`window_short_s`, `window_long_s`, used by no step) | `excursion_counts.py` → excursion table |
 | `vertical.max_ms` | 7 | the vertical speed of the barometer over windows of W, in the flights whose barometer is a witness ([`vertical_speeds`][xc_dynamics.preprocessing.altitude.vertical_speeds], [`vertical_window_speeds`][xc_dynamics.preprocessing.altitude.vertical_window_speeds]) | `vertical_histograms.py` → figure vertical-speed; checked by `vertical_counts.py` → vertical table |
 | `airborne.min_kmh`, `airborne.min_s`, `airborne.max_pause_s` | 8 | set by hand | `airborne_counts.py` |
+| `sampling.max_s` | 9 | set by hand | `airborne_counts.py` |
 
 ## Adding a step
 
