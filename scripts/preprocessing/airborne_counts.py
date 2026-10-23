@@ -6,7 +6,8 @@ Each flight with a track goes through the whole pre-processing (preprocess). The
 deletes the fixes before the first and after the last stretch faster than
 airborne.min_kmh for airborne.min_s, and drops the flight (airborne_ok False) if it has no
 such stretch or if its longest_pause_s, the longest time without a fast step between
-take-off and landing, exceeds airborne.max_pause_s.
+take-off and landing, exceeds airborne.max_pause_s. The flights that pass it are then
+dropped (sampling_ok False) if their sampling interval exceeds sampling.max_s.
 
     uv run python scripts/preprocessing/airborne_counts.py para
     uv run python scripts/preprocessing/airborne_counts.py hang --sample 200
@@ -65,6 +66,7 @@ def main() -> None:
         "window_s": config["excursion"]["window_s"],
         "max_ms": config["vertical"]["max_ms"][args.discipline],
         "airborne": config["airborne"],
+        "max_sampling_s": config["sampling"]["max_s"],
     }
     root = args.root or Path(settings["root"])
     tracks = args.tracks or Path(settings["tracks"])
@@ -100,6 +102,7 @@ def main() -> None:
     errors = int(result["error"].notna().sum()) if "error" in result else 0
     judged = int(result.airborne_ok.notna().sum())  # flights that reached the rule
     dropped = int(result.airborne_ok.eq(False).sum())
+    sampling_dropped = int(result.sampling_ok.eq(False).sum())
     record |= {
         "discipline": args.discipline,
         "root": str(root),
@@ -110,11 +113,15 @@ def main() -> None:
         "unreadable": errors,
         "judged": judged,
         "dropped": dropped,
+        "sampling_dropped": sampling_dropped,
         "finished": now(),
     }
     (out / "run.yaml").write_text(yaml.safe_dump(record, sort_keys=False), encoding="utf-8")
 
-    print(f"{len(result)} flights: {errors} unreadable, {judged} through the rule, {dropped} dropped")
+    print(
+        f"{len(result)} flights: {errors} unreadable, {judged} through the rule, {dropped} dropped, "
+        f"{sampling_dropped} dropped by the sampling interval"
+    )
     print(f"saved {out / 'flights.csv'} and {out / 'run.yaml'}")
 
 

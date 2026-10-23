@@ -83,18 +83,22 @@ def preprocess(
     window_s: float,
     max_ms: float,
     airborne: dict,
+    max_sampling_s: float,
 ) -> tuple[pd.DataFrame, dict]:
     """Run one IGC file through every step of the pre-processing; return the fixes kept,
     with a column segment that numbers from 0 the pieces the flight was split into, and the
-    row with the counters of every step. In a flight kept the row also has the times
-    t_takeoff and t_landing of the first and last fix kept, the seconds ground_before_s and
-    ground_after_s cut before and after, and the longest_pause_s between them.
+    row with the counters of every step. In a flight that passed the take-off and landing
+    rule the row also has the times t_takeoff and t_landing of the first and last fix kept,
+    the seconds ground_before_s and ground_after_s cut before and after, and the
+    longest_pause_s between them.
 
     max_ms is the top vertical speed of the discipline, airborne the keys min_kmh, min_s and
-    max_pause_s of the take-off and landing rule (configs/preprocessing.yaml), the other
-    thresholds as in before_vertical. A flight dropped by a step is returned as that step leaves it:
-    airborne_ok is False if no stretch of it is fast enough, or if it stops flying for
-    longer than max_pause_s between the take-off and the landing.
+    max_pause_s of the take-off and landing rule, max_sampling_s the longest sampling
+    interval (configs/preprocessing.yaml), the other thresholds as in before_vertical. A
+    flight dropped by a step is returned as that step leaves it: airborne_ok is False if no
+    stretch of it is fast enough, or if it stops flying for longer than max_pause_s between
+    the take-off and the landing; sampling_ok is False if the sampling interval of its track
+    is longer than max_sampling_s.
     """
     fixes, row = before_vertical(path, altitude, median_max_kmh, max_kmh, window_s)
     if not (row["gnss_ok"] and row["speed_ok"]):
@@ -125,6 +129,9 @@ def preprocess(
     # The time cut before the take-off and after the landing.
     row["ground_before_s"] = row["t_takeoff"] - float(fixes["t"].iloc[0])
     row["ground_after_s"] = float(fixes["t"].iloc[-1]) - row["t_landing"]
+    # The logger is a property of the track as read: a sampling interval above max_sampling_s
+    # drops the flight, whatever the steps before did to it.
+    row["sampling_ok"] = bool(row["sampling_s"] <= max_sampling_s)
     # A segment wholly before the take-off or after the landing has lost all its fixes, and
     # its number is gone. Number the segments left from 0 again, so that none is missing:
     # 1 1 2 2 becomes 0 0 1 1 when segment 0 was on the ground.

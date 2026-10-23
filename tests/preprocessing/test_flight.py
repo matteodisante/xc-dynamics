@@ -9,7 +9,7 @@ ALTITUDE = dict(
 )
 MEDIAN_MAX_KMH = 70.0
 AIRBORNE = dict(min_kmh=15.0, min_s=20.0, max_pause_s=300.0)
-PREPROCESS = dict(max_kmh=100.0, window_s=3.0, max_ms=30.0, airborne=AIRBORNE)
+PREPROCESS = dict(max_kmh=100.0, window_s=3.0, max_ms=30.0, airborne=AIRBORNE, max_sampling_s=10.0)
 
 
 def b(second, lat_milliminutes, gnss):
@@ -107,6 +107,20 @@ def test_flight_without_a_fast_stretch_is_dropped(tmp_path):
     _, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(airborne=AIRBORNE | dict(min_s=100.0)))
     assert not row["airborne_ok"]
     assert "t_takeoff" not in row
+
+
+def test_sampling_interval_up_to_the_threshold_is_kept(tmp_path):
+    # The track is sampled every second: a threshold of 1 s keeps it, one below drops it.
+    _, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(max_sampling_s=1.0))
+    assert row["airborne_ok"] and row["sampling_ok"]
+    _, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(max_sampling_s=0.5))
+    assert row["airborne_ok"] and not row["sampling_ok"]
+
+
+def test_flight_dropped_before_the_sampling_rule_has_no_verdict(tmp_path):
+    _, row = preprocess(ground_flight(tmp_path), ALTITUDE, MEDIAN_MAX_KMH, **PREPROCESS | dict(airborne=AIRBORNE | dict(min_s=100.0)))
+    assert not row["airborne_ok"]
+    assert "sampling_ok" not in row
 
 
 def flight_with_a_stop(tmp_path):
