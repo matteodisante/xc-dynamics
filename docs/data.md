@@ -30,6 +30,7 @@ SSD_DATA/
 │   └── scratch/<area>/<result>/              trials, same layout, never read   3 MB
 ├── hang_gliders/delta_cfd_igc/               data folder, hang gliders        26 MB
 │   └── ...                                   same layout: lists 9 MB, catalog 3 MB, results 6 MB
+├── dem/rge_alti_5m/                          elevation model, 5 m grid        13 GB
 └── xc-viewer-data/
     ├── paragliders/raw/igc/<season>/<date>_<flight_id>.igc
     │                                         tracks folder: 186 052 tracks    72 GB
@@ -57,6 +58,7 @@ Results are grouped by [area](architecture.md#areas), then named by what they ho
 | `derived/preprocessing/vertical_histograms/counts.npz` | `scripts/preprocessing/vertical_histograms.py` | per wing class, the steps and the windows of `excursion.window_s` per m/s of vertical speed, from both altitudes, in the witness flights | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/vertical/flights.csv` | `scripts/preprocessing/vertical_counts.py` | one row per flight: the counters of steps 1 to 6, then the vertical excursion rule on the GNSS altitude and, in the witness flights, on the pressure altitude | `thesis/scripts/preprocessing.py` |
 | `derived/preprocessing/airborne/flights.csv` | `scripts/preprocessing/airborne_counts.py` | one row per flight: the counters of steps 1 to 7, then the take-off and landing rule: fixes deleted, times, longest pause, then the sampling verdict | `thesis/scripts/preprocessing.py` |
+| `dem/rge_alti_5m/rge_alti_5m.vrt` (disk root) | `build.sh` in that folder, from the archives of the IGN RGE ALTI downloaded by hand (`urls.txt`) | mosaic of the 3804 GeoTIFF tiles in `tif/`: French Alps and Pyrenees; 5 m grid, EPSG:2154, heights in m (NGF-IGN69), nodata -99999 | — |
 | `derived/preprocessing/<result>/run.yaml` | the script of the result | the record of the run | you, before the thesis uses the result |
 
 What each file holds, column by column, is in [Formats](#formats).
